@@ -1,0 +1,11 @@
+[package]
+name = "piston-gui"
+version = "0.1.0"
+authors = ["Alex Yang <aleozlx@gmail.com>"]
+
+[dependencies]
+piston_window = "0.80.0"
+find_folder = "0.3.0"
+image = "0.19.0"
+gfx = "0.17.1"
+gfx_device_gl = "0.15.0"
