@@ -6,17 +6,11 @@ extern crate image;
 extern crate imageproc;
 extern crate rusttype;
 
+mod vgui;
 use std::rc::Rc;
-
 use piston_window::*;
 use sprite::*;
-use ai_behavior::{
-    Action
-};
-
-use imageproc::drawing::draw_text_mut;
-use image::{Rgba, RgbaImage};
-use rusttype::{FontCollection, Scale};
+use ai_behavior::Action;
 
 fn main() {
     let (width, height) = (300, 300);
@@ -30,7 +24,6 @@ fn main() {
 
     let assets = find_folder::Search::ParentsThenKids(3, 3)
         .for_folder("assets").unwrap();
-    let id;
     let mut scene = Scene::new();
     let tex = Rc::new(Texture::from_path(
             &mut window.factory,
@@ -40,24 +33,10 @@ fn main() {
         ).unwrap());
     let mut sprite = Sprite::from_texture(tex.clone());
     sprite.set_position(width as f64 / 2.0, height as f64 / 2.0);
+    let id = scene.add_child(sprite);
 
-    let mut sprite2 = Sprite::from_texture(tex.clone());
-    sprite2.set_position(300.0, 50.0);
-    id = scene.add_child(sprite);
-    let id2 = scene.add_child(sprite2);
-
-    let mut image = RgbaImage::new(100, 100);
-    let font = Vec::from(include_bytes!("../assets/FiraSans-Regular.ttf") as &[u8]);
-    let font = FontCollection::from_bytes(font).unwrap().into_font().unwrap();
-    let height = 32.0;
-    let scale = Scale { x: height, y: height };
-    draw_text_mut(&mut image, Rgba([0u8, 0u8, 255u8, 255u8]), 0, 0, scale, &font, "Hola!");
-    let tex3 = Rc::new(Texture::from_image(
-        &mut window.factory,
-        &image,
-        &TextureSettings::new()
-    ).unwrap());
-    let mut sprite3 = Sprite::from_texture(tex3.clone());
+    let font = vgui::load_font("FiraSans-Regular.ttf").expect("Cannot load font.");
+    let mut sprite3 = vgui::MenuEntry{ label: String::from("Hola!"), font: &font }.make_sprite(&mut window.factory);
     sprite3.set_position(500.0, 500.0);
     let id3 = scene.add_child(sprite3);
 
