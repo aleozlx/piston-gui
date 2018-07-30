@@ -72,10 +72,10 @@ impl<'a> SpriteMeta for MenuEntry<'a> {
 }
 
 impl<'a> Menu<'a> {
-    pub fn new(entries: &[&str], font: &'a Font) -> Menu<'a> {
+    pub fn new(entries: &Vec<String>, font: &'a Font) -> Menu<'a> {
         let mut menu = Menu { cursor: 0, entries: Vec::new(), uuid_cursor: None };
         for (i, val) in entries.iter().enumerate() {
-            let entry = MenuEntry{ offset:i, label: String::from(*val), font: font };
+            let entry = MenuEntry{ offset:i, label: val.clone(), font: font };
             menu.entries.push(entry);
         }
         return menu;
