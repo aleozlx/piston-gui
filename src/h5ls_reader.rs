@@ -24,14 +24,34 @@ pub enum H5Obj{
 
 impl H5Group {
     pub fn locate_group_mut(&mut self, path: &Path) -> &mut H5Group {
-        let mut components = path.components();
-        match components.next() {
-            Some(group_name) => {
-                let group_name = group_name.as_os_str().to_str().unwrap();
-                self.children.get_mut(group_name).expect("Group doesn't exist.")
-                    .to_group().locate_group_mut(components.as_path())
-            },
-            None => self
+        // println!("locate_group_mut {} {:#?}", &self.name, path);
+        if path.is_absolute() {
+            if self.name == "/" {
+                let mut components = path.components();
+                components.next(); // skip root
+                let next = components.next();
+                match next {
+                    None => self,
+                    Some(group_component) => {
+                        let group_name = group_component.as_os_str().to_str().unwrap(); 
+                        self.children.get_mut(group_name).expect(&format!("Group \"{}\" doesn't exist.", group_name))
+                            .to_group().locate_group_mut(components.as_path())
+                    }
+                }
+            }
+            else { panic!("Absolute path cannot be traced from here."); }
+        }
+        else {
+            let mut components = path.components();
+            let next = components.next();
+            match next {
+                None => self,
+                Some(group_component) => {
+                    let group_name = group_component.as_os_str().to_str().unwrap(); 
+                    self.children.get_mut(group_name).expect(&format!("Group \"{}\" doesn't exist.", group_name))
+                        .to_group().locate_group_mut(components.as_path())
+                }
+            }
         }
     }
 }
@@ -76,21 +96,43 @@ pub fn parse(fname: &PathBuf) -> std::io::Result<()> {
                     "Group" => {
                         let full_name = &captures["name"];
                         if full_name != "/" {
+                            println!("{}", full_name);
                             let full_name = PathBuf::from(full_name);
-                            match subgroup(&spath, &full_name) {
-                                Some(group_name) => {
-                                    root.locate_group_mut(&spath).children.insert(
-                                        group_name.clone(),
-                                        H5Obj::from(H5Group {
-                                            name: group_name.clone(),
-                                            children: BTreeMap::new()
-                                        }));
+                            loop {
+                                match subgroup(&spath, &full_name) {
+                                    Some(group_name) => {
+                                        root.locate_group_mut(&spath).children.insert(
+                                            group_name.clone(),
+                                            H5Obj::from(H5Group {
+                                                name: group_name.clone(),
+                                                children: BTreeMap::new()
+                                            }));
                                         spath.push(group_name.clone());
-                                },
-                                None => {
-                                    spath.pop(); // trace back
+                                        break;
+                                    },
+                                    None => {
+                                        spath.pop(); // trace back
+                                    }
                                 }
-                            };
+                            }
+
+                            // match subgroup(&spath, &full_name) {
+                            //     Some(group_name) => {
+                            //         root.locate_group_mut(&spath).children.insert(
+                            //             group_name.clone(),
+                            //             H5Obj::from(H5Group {
+                            //                 name: group_name.clone(),
+                            //                 children: BTreeMap::new()
+                            //             }));
+                            //             spath.push(group_name.clone());
+                            //     },
+                            //     None => {
+                            //         spath.pop(); // trace back
+                            //     }
+                            // };
+
+
+
                             // let temp_name = full_name.strip_prefix(base);
                             // match temp_name {
                             //     Some()
