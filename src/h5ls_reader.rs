@@ -16,7 +16,6 @@ pub struct H5Dataset {
     pub name: String
 }
 
-//https://stackoverflow.com/questions/34953711/unwrap-inner-type-when-enum-variant-is-known
 pub enum H5Obj{
     Group(H5Group),
     Dataset(H5Dataset)
@@ -25,32 +24,21 @@ pub enum H5Obj{
 impl H5Group {
     pub fn locate_group_mut(&mut self, path: &Path) -> &mut H5Group {
         // println!("locate_group_mut {} {:#?}", &self.name, path);
+        let mut components = path.components();
         if path.is_absolute() {
             if self.name == "/" {
-                let mut components = path.components();
                 components.next(); // skip root
-                let next = components.next();
-                match next {
-                    None => self,
-                    Some(group_component) => {
-                        let group_name = group_component.as_os_str().to_str().unwrap(); 
-                        self.children.get_mut(group_name).expect(&format!("Group \"{}\" doesn't exist.", group_name))
-                            .to_group().locate_group_mut(components.as_path())
-                    }
-                }
             }
             else { panic!("Absolute path cannot be traced from here."); }
         }
-        else {
-            let mut components = path.components();
-            let next = components.next();
-            match next {
-                None => self,
-                Some(group_component) => {
-                    let group_name = group_component.as_os_str().to_str().unwrap(); 
-                    self.children.get_mut(group_name).expect(&format!("Group \"{}\" doesn't exist.", group_name))
-                        .to_group().locate_group_mut(components.as_path())
-                }
+
+        let next = components.next();
+        match next {
+            None => self,
+            Some(group_component) => {
+                let group_name = group_component.as_os_str().to_str().unwrap(); 
+                self.children.get_mut(group_name).expect(&format!("Group \"{}\" doesn't exist.", group_name))
+                    .to_group().locate_group_mut(components.as_path())
             }
         }
     }
@@ -59,6 +47,12 @@ impl H5Group {
 impl From<H5Group> for H5Obj {
     fn from(val: H5Group) -> Self {
         H5Obj::Group(val)
+    }
+}
+
+impl From<H5Dataset> for H5Obj {
+    fn from(val: H5Dataset) -> Self {
+        H5Obj::Dataset(val)
     }
 }
 
@@ -86,7 +80,6 @@ pub fn parse(fname: &PathBuf) -> std::io::Result<()> {
     let reader = BufReader::new(file);
     let mut root = H5Group { name: String::from("/"), children: BTreeMap::new() };
     let mut spath = PathBuf::from(&root.name);
-    // let test_path = PathBuf::from("/model_weights");
     for ll in reader.lines() {
         let line = ll?;
         let m = rule.captures(&line);
@@ -96,7 +89,7 @@ pub fn parse(fname: &PathBuf) -> std::io::Result<()> {
                     "Group" => {
                         let full_name = &captures["name"];
                         if full_name != "/" {
-                            println!("{}", full_name);
+                            // println!("G {}", full_name);
                             let full_name = PathBuf::from(full_name);
                             loop {
                                 match subgroup(&spath, &full_name) {
@@ -114,42 +107,18 @@ pub fn parse(fname: &PathBuf) -> std::io::Result<()> {
                                         spath.pop(); // trace back
                                     }
                                 }
-                            }
-
-                            // match subgroup(&spath, &full_name) {
-                            //     Some(group_name) => {
-                            //         root.locate_group_mut(&spath).children.insert(
-                            //             group_name.clone(),
-                            //             H5Obj::from(H5Group {
-                            //                 name: group_name.clone(),
-                            //                 children: BTreeMap::new()
-                            //             }));
-                            //             spath.push(group_name.clone());
-                            //     },
-                            //     None => {
-                            //         spath.pop(); // trace back
-                            //     }
-                            // };
-
-
-
-                            // let temp_name = full_name.strip_prefix(base);
-                            // match temp_name {
-                            //     Some()
-                            // }
-                            // if full_name.starts_with(&spath) {
-                            //     // Dealing with a child group
-                            //     let parent = path.last_mut().unwrap();
-                            //     parent.children.push(H5Obj::from(H5Group {
-                            //         name: String::from(full_name.file_name().unwrap().to_str().expect("Cannot decode path.")),
-                            //         children: Vec::new()
-                            //     }));
-                            //     //path.push(&mut me);
-                            // }
-                            
+                            }                            
                         }
                     },
-                    "Dataset" => (),
+                    "Dataset" => {
+                        let full_name = &captures["name"];
+                        // println!("D {}", full_name);
+                        let full_name = PathBuf::from(full_name);
+                        let dataset_name = String::from(full_name.file_name().unwrap().to_str().unwrap());
+                        root.locate_group_mut(&spath).children.insert(
+                            dataset_name.clone(),
+                            H5Obj::from(H5Dataset { name: dataset_name.clone() }));
+                    },
                     _ => ()
                 }
             }
