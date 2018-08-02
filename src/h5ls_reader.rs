@@ -74,7 +74,7 @@ fn subgroup(parent: &PathBuf, child: &PathBuf) -> Option<String> {
     }
 }
 
-pub fn parse(fname: &PathBuf) -> std::io::Result<()> {
+pub fn parse(fname: &PathBuf) -> std::io::Result<H5Group> {
     let rule = Regex::new(r"^(?P<name>[^ ]+)\s+(?P<type>Group|Dataset)").unwrap();
     let file = File::open(fname)?;
     let reader = BufReader::new(file);
@@ -126,5 +126,5 @@ pub fn parse(fname: &PathBuf) -> std::io::Result<()> {
         };
         
     }
-    Ok(())
+    Ok(root)
 }
