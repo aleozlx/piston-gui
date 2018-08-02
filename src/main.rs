@@ -5,17 +5,13 @@ extern crate find_folder;
 extern crate image;
 extern crate imageproc;
 extern crate rusttype;
-extern crate yaml_rust;
 extern crate regex;
-// extern crate gfx;
-// extern crate uuid;
 
 mod vgui;
 mod h5ls_reader;
 use vgui::SpriteMeta;
 use piston_window::*;
 use sprite::*;
-// use yaml_rust::YamlLoader;
 
 fn main() {
     let (width, height) = (800, 600);
@@ -30,18 +26,6 @@ fn main() {
     let font = vgui::load_font("FiraSans-Regular.ttf").expect("Cannot load font.");
 
     let mut temp_entries = Vec::<String>::new();
-    // let vgg16 = &YamlLoader::load_from_str(include_str!("../assets/vgg16-v2.yaml")).unwrap()[0];
-    // for block in vgg16["nnblocks"].as_vec().unwrap() {
-    //     let blk_name = block["name"].as_str().unwrap();
-        
-    //     temp_entries.push(String::from(blk_name));
-    //     // let blk_node = model.insert_with_values(None, None, &[0, 1], &[&blk_name, &0]);
-
-    //     // for layer in block["layers"].as_vec().unwrap() {
-    //     //     let layer_name = layer["class"].as_str().unwrap();
-    //     //     model.insert_with_values(Some(&blk_node), None, &[0, 1], &[&layer_name, &0]);
-    //     // }
-    // }
 
     let assets = find_folder::Search::ParentsThenKids(2, 2).for_folder("assets").unwrap();
     let ref fname_h5meta = assets.join("epoch1.h5.txt");
