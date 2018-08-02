@@ -35,7 +35,8 @@ pub struct Menu<'a> {
     pub entries: Vec<MenuEntry<'a>>,
     
     cursor: usize,
-    uuid_cursor: Option<uuid::Uuid>
+    uuid_cursor: Option<uuid::Uuid>,
+    pub uuid_self: Option<uuid::Uuid>
 }
 
 pub fn load_font<'a>(fname: &str) -> Result<Font<'static>, rusttype::Error> {
@@ -73,7 +74,7 @@ impl<'a> SpriteMeta for MenuEntry<'a> {
 
 impl<'a> Menu<'a> {
     pub fn new(entries: &Vec<String>, font: &'a Font) -> Menu<'a> {
-        let mut menu = Menu { cursor: 0, entries: Vec::new(), uuid_cursor: None };
+        let mut menu = Menu { cursor: 0, entries: Vec::new(), uuid_cursor: None, uuid_self: None };
         for (i, val) in entries.iter().enumerate() {
             let entry = MenuEntry{ offset:i, label: val.clone(), font: font };
             menu.entries.push(entry);
@@ -93,6 +94,13 @@ impl<'a> Menu<'a> {
         let new_y = (ENTRY_HEIGHT * (self.cursor as u32)) as f64;
         let shift = ai_behavior::Action(Ease(EaseFunction::CircularInOut, Box::new(MoveTo(0.16, 0.0, new_y))));
         (self.uuid_cursor.unwrap(), shift)
+    }
+
+    pub fn get(&self) -> Option<String> {
+        if self.entries.len() > 0 {
+            Some(self.entries[self.cursor].label.clone())
+        }
+        else { None }
     }
 }
 
