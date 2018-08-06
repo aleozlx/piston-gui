@@ -24,22 +24,22 @@ pub trait SpriteMeta {
         where F: gfx::Factory<R>, R: gfx::Resources;
 }
 
-pub struct MenuEntry<'a> {
+pub struct MenuEntry<'font> {
     pub label: String,
-    pub font: &'a Font<'a>,
+    pub font: &'font Font<'font>,
 
     offset: usize
 }
 
-pub struct Menu<'a> {
-    pub entries: Vec<MenuEntry<'a>>,
+pub struct Menu<'font> {
+    pub entries: Vec<MenuEntry<'font>>,
     
     cursor: usize,
     uuid_cursor: Option<uuid::Uuid>,
     pub uuid_self: Option<uuid::Uuid>
 }
 
-pub fn load_font<'a>(fname: &str) -> Result<Font<'static>, rusttype::Error> {
+pub fn load_font(fname: &str) -> Result<Font<'static>, rusttype::Error> {
     let assets = find_folder::Search::ParentsThenKids(2, 2).for_folder("assets").unwrap();
     let ref fname_font = assets.join(fname);
     let mut fin_font = File::open(fname_font).expect(&format!("Cannot find font: {}", fname));

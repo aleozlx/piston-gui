@@ -30,13 +30,13 @@ fn main() {
         .build()
         .unwrap();
     let mut scene = Scene::new();
-    let font = vgui::load_font("FiraSans-Regular.ttf").expect("Cannot load font.");
+    let ref font = vgui::load_font("FiraSans-Regular.ttf").expect("Cannot load font.");
 
     let ref fname_h5meta = std::path::PathBuf::from("/home/alex/datasets/ucm-sample.h5.txt");
     let mut menu;
     match h5ls_reader::parse(fname_h5meta) {
         Ok(root) => {
-            menu = menu_from_h5group(&root, &font, true);
+            menu = menu_from_h5group(&root, font, true);
             let mut s_menu = menu.make_sprite(&mut window.factory);
             s_menu.set_position(15.0, 15.0);
             menu.uuid_self = Some(scene.add_child(s_menu));
