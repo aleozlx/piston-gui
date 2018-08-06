@@ -32,7 +32,7 @@ fn main() {
         .build()
         .unwrap();
     let mut scene = Scene::new();
-    let font = Rc::new(vgui::load_font("FiraSans-Regular.ttf").expect("Cannot load font."));
+    let font = vgui::load_font("FiraSans-Regular.ttf").expect("Cannot load font.");
     let ref fname_h5meta = std::path::PathBuf::from("/home/alex/datasets/ucm-sample.h5.txt");
     let mut menu;
     match h5ls_reader::parse(fname_h5meta) {

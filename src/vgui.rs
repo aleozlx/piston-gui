@@ -12,12 +12,11 @@ use std::rc::Rc;
 use std::borrow::Borrow;
 use piston_window::*;
 use sprite::*;
-use rusttype::{Font, FontCollection, Scale};
 use imageproc;
 use imageproc::rect::Rect;
 use image::{Rgba, RgbaImage};
 
-pub type VGUIFont = std::rc::Rc<Font<'static>>;
+pub type VGUIFont = std::rc::Rc<rusttype::Font<'static>>;
 
 const ENTRY_HEIGHT: u32 = 32;
 const COLUMN_WIDTH: u32 = 315;
@@ -42,13 +41,13 @@ pub struct Menu {
     pub uuid_self: Option<uuid::Uuid>
 }
 
-pub fn load_font(fname: &str) -> Result<Font<'static>, rusttype::Error> {
+pub fn load_font(fname: &str) -> Result<VGUIFont, rusttype::Error> {
     let assets = find_folder::Search::ParentsThenKids(2, 2).for_folder("assets").unwrap();
     let ref fname_font = assets.join(fname);
     let mut fin_font = File::open(fname_font).expect(&format!("Cannot find font: {}", fname));
     let mut buffer = Vec::new();
     fin_font.read_to_end(&mut buffer).expect("IO error while reading the font.");
-    FontCollection::from_bytes(buffer).unwrap().into_font()
+    Ok(Rc::new(rusttype::FontCollection::from_bytes(buffer).unwrap().into_font()?))
 }
 
 impl SpritePrototype for MenuEntry {
@@ -58,7 +57,7 @@ impl SpritePrototype for MenuEntry {
         const HEIGHT: u32 = ENTRY_HEIGHT;
         const WIDTH: u32 = COLUMN_WIDTH;
         let mut image = RgbaImage::new(WIDTH, HEIGHT);
-        let scale = Scale { x: HEIGHT as f32, y: HEIGHT as f32 };
+        let scale = rusttype::Scale { x: HEIGHT as f32, y: HEIGHT as f32 };
         if cfg!(debug_assertions) {
             imageproc::drawing::draw_hollow_rect_mut(&mut image, Rect::at(0, 0).of_size(WIDTH, HEIGHT), Rgba([0u8, 0u8, 255u8, 255u8]));
         }
