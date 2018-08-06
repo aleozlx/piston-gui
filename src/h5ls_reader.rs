@@ -65,9 +65,20 @@ impl H5Group {
         }
     }
 
-    pub fn locate<P: AsRef<Path>>(&self, path: P) -> &H5Obj {
-        self.as_ref().locate(path)
+    pub fn is_group<P: AsRef<Path>>(&self, path: P) -> bool {
+        let path = path.as_ref();
+        match path.parent() {
+            Some(parent) => {
+                let name = path.file_name().unwrap().to_str().unwrap();
+                self.locate_group(parent).children.get(name).unwrap().is_group()
+            },
+            None => true
+        }
     }
+
+    // pub fn locate<P: AsRef<Path>>(&self, path: P) -> &H5Obj {
+    //     self.as_ref().locate(path)
+    // }
 
     pub fn parse<P: AsRef<Path>>(fname: P) -> std::io::Result<H5Group> {
         let rule = Regex::new(r"^(?P<name>[^ ]+)\s+(?P<type>Group|Dataset)").unwrap();

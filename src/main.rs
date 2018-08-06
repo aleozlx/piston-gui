@@ -80,11 +80,14 @@ fn main() {
                                 register_menu(&mut scene, &mut menu, &mut window.factory); 
                             },
                             _ => {
-                                if h5root.locate(&h5pointer).is_group() {
+                                h5pointer.push(entry);
+                                if h5root.is_group(&h5pointer) {
                                     scene.remove_child(menu.uuid_self.unwrap());
-                                    h5pointer.push(entry);
                                     menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
                                     register_menu(&mut scene, &mut menu, &mut window.factory);
+                                }
+                                else {
+                                    h5pointer.pop();
                                 }
                             }
                         }
