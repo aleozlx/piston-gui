@@ -9,12 +9,15 @@ use std;
 use std::fs::File;
 use std::io::Read;
 use std::rc::Rc;
+use std::borrow::Borrow;
 use piston_window::*;
 use sprite::*;
 use rusttype::{Font, FontCollection, Scale};
 use imageproc;
 use imageproc::rect::Rect;
 use image::{Rgba, RgbaImage};
+
+pub type VGUIFont = std::rc::Rc<Font<'static>>;
 
 const ENTRY_HEIGHT: u32 = 32;
 const COLUMN_WIDTH: u32 = 315;
@@ -24,15 +27,15 @@ pub trait SpriteMeta {
         where F: gfx::Factory<R>, R: gfx::Resources;
 }
 
-pub struct MenuEntry<'font> {
+pub struct MenuEntry {
     pub label: String,
-    pub font: &'font Font<'font>,
+    pub font: VGUIFont,
 
     offset: usize
 }
 
-pub struct Menu<'font> {
-    pub entries: Vec<MenuEntry<'font>>,
+pub struct Menu {
+    pub entries: Vec<MenuEntry>,
     
     cursor: usize,
     uuid_cursor: Option<uuid::Uuid>,
@@ -48,7 +51,7 @@ pub fn load_font(fname: &str) -> Result<Font<'static>, rusttype::Error> {
     FontCollection::from_bytes(buffer).unwrap().into_font()
 }
 
-impl<'a> SpriteMeta for MenuEntry<'a> {
+impl SpriteMeta for MenuEntry {
     fn make_sprite<F, R>(&mut self, factory: &mut F) -> Sprite<Texture<R>>
         where F: gfx::Factory<R>, R: gfx::Resources
     {
@@ -59,7 +62,7 @@ impl<'a> SpriteMeta for MenuEntry<'a> {
         if cfg!(debug_assertions) {
             imageproc::drawing::draw_hollow_rect_mut(&mut image, Rect::at(0, 0).of_size(WIDTH, HEIGHT), Rgba([0u8, 0u8, 255u8, 255u8]));
         }
-        imageproc::drawing::draw_text_mut(&mut image, Rgba([0u8, 0u8, 255u8, 255u8]), 0, 0, scale, self.font, &self.label);
+        imageproc::drawing::draw_text_mut(&mut image, Rgba([0u8, 0u8, 255u8, 255u8]), 0, 0, scale, self.font.borrow(), &self.label);
         let tex = Rc::new(Texture::from_image(
             factory,
             &image,
@@ -72,11 +75,11 @@ impl<'a> SpriteMeta for MenuEntry<'a> {
     }
 }
 
-impl<'a> Menu<'a> {
-    pub fn new(entries: &Vec<String>, font: &'a Font) -> Menu<'a> {
+impl Menu {
+    pub fn new(entries: &Vec<String>, font: VGUIFont) -> Menu {
         let mut menu = Menu { cursor: 0, entries: Vec::new(), uuid_cursor: None, uuid_self: None };
         for (i, val) in entries.iter().enumerate() {
-            let entry = MenuEntry{ offset:i, label: val.clone(), font: font };
+            let entry = MenuEntry{ offset:i, label: val.clone(), font: Rc::clone(&font) };
             menu.entries.push(entry);
         }
         return menu;
@@ -104,7 +107,7 @@ impl<'a> Menu<'a> {
     }
 }
 
-impl<'a> SpriteMeta for Menu<'a> {
+impl SpriteMeta for Menu {
     fn make_sprite<F, R>(&mut self, factory: &mut F) -> Sprite<Texture<R>>
         where F: gfx::Factory<R>, R: gfx::Resources
     {
