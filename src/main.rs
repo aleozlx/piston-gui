@@ -5,21 +5,35 @@ extern crate find_folder;
 extern crate image;
 extern crate imageproc;
 extern crate rusttype;
+extern crate gfx;
 extern crate regex;
 
 mod vgui;
 mod h5ls_reader;
 use std::rc::Rc;
+use std::path::PathBuf;
 use vgui::SpritePrototype;
+use vgui::MenuAdapter;
 use vgui::VGUIFont;
+use h5ls_reader::{H5Obj, H5Group, H5Dataset};
 use piston_window::*;
 use sprite::*;
 
-fn menu_from_h5group(group: &h5ls_reader::H5Group, font: VGUIFont, root: bool) -> vgui::Menu {
-    let ref mut group_entries: Vec<String> = group.children.keys().cloned().collect();
-    let ref mut menu_entries = if root { Vec::new() } else { vec![String::from("..")] };
-    menu_entries.append(group_entries);
-    vgui::Menu::new(menu_entries, font)
+impl MenuAdapter<H5Group> for vgui::Menu {
+    fn adapt(group: &H5Group, font: VGUIFont) -> vgui::Menu {
+        let ref mut group_entries: Vec<String> = group.children.keys().cloned().collect();
+        let ref mut menu_entries =
+            if group.name == "/" { Vec::new() } else { vec![String::from("..")] };
+        menu_entries.append(group_entries);
+        vgui::Menu::new(menu_entries, font)
+    }
+}
+
+fn register_menu<F, R>(scene: &mut sprite::Scene<piston_window::Texture<R>>, menu: &mut vgui::Menu, factory: &mut F)
+    where F: gfx::Factory<R>, R: gfx::Resources {
+    let mut s_menu = menu.make_sprite(factory);
+    s_menu.set_position(15.0, 15.0);
+    menu.uuid_self = Some(scene.add_child(s_menu));   
 }
 
 fn main() {
@@ -33,17 +47,10 @@ fn main() {
         .unwrap();
     let mut scene = Scene::new();
     let font = vgui::load_font("FiraSans-Regular.ttf").expect("Cannot load font.");
-    let ref fname_h5meta = std::path::PathBuf::from("/home/alex/datasets/ucm-sample.h5.txt");
-    let mut menu;
-    match h5ls_reader::parse(fname_h5meta) {
-        Ok(root) => {
-            menu = menu_from_h5group(&root, Rc::clone(&font), true);
-            let mut s_menu = menu.make_sprite(&mut window.factory);
-            s_menu.set_position(15.0, 15.0);
-            menu.uuid_self = Some(scene.add_child(s_menu));
-        },
-        Err(_) => { panic!("IO Error"); }
-    }
+    let h5root = H5Group::parse("/home/alex/datasets/ucm-sample.h5.txt").expect("IO Error");
+    let mut h5pointer = PathBuf::from(&h5root.name);
+    let mut menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
+    register_menu(&mut scene, &mut menu, &mut window.factory); 
 
     while let Some(e) = window.next() {
         scene.event(&e);
@@ -64,11 +71,23 @@ fn main() {
                     scene.run(sid, &shift);
                 },
                 Key::Right => {
-                    if let Some(key) = menu.get() {
-                        // if let Some(id) = menu.uuid_self {
-                        //     scene.remove_child(id);
-                        // }
-                        println!("{}", &key);
+                    if let Some(entry) = menu.get() {
+                        match entry.as_ref() {
+                            ".." => {
+                                scene.remove_child(menu.uuid_self.unwrap());
+                                h5pointer.pop();
+                                menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
+                                register_menu(&mut scene, &mut menu, &mut window.factory); 
+                            },
+                            _ => {
+                                if h5root.locate(&h5pointer).is_group() {
+                                    scene.remove_child(menu.uuid_self.unwrap());
+                                    h5pointer.push(entry);
+                                    menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
+                                    register_menu(&mut scene, &mut menu, &mut window.factory);
+                                }
+                            }
+                        }
                     }
                 }
                 _ => {}

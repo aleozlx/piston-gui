@@ -26,6 +26,10 @@ pub trait SpritePrototype {
         where F: gfx::Factory<R>, R: gfx::Resources;
 }
 
+pub trait MenuAdapter<T> {
+    fn adapt(group: &T, font: VGUIFont) -> Menu;
+}
+
 pub struct MenuEntry {
     pub label: String,
     pub font: VGUIFont,
