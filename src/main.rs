@@ -10,7 +10,7 @@ extern crate regex;
 mod vgui;
 mod h5ls_reader;
 use std::rc::Rc;
-use vgui::SpriteMeta;
+use vgui::SpritePrototype;
 use vgui::VGUIFont;
 use piston_window::*;
 use sprite::*;

@@ -22,7 +22,7 @@ pub type VGUIFont = std::rc::Rc<Font<'static>>;
 const ENTRY_HEIGHT: u32 = 32;
 const COLUMN_WIDTH: u32 = 315;
 
-pub trait SpriteMeta {
+pub trait SpritePrototype {
     fn make_sprite<F, R>(&mut self, factory: &mut F) -> Sprite<Texture<R>>
         where F: gfx::Factory<R>, R: gfx::Resources;
 }
@@ -51,7 +51,7 @@ pub fn load_font(fname: &str) -> Result<Font<'static>, rusttype::Error> {
     FontCollection::from_bytes(buffer).unwrap().into_font()
 }
 
-impl SpriteMeta for MenuEntry {
+impl SpritePrototype for MenuEntry {
     fn make_sprite<F, R>(&mut self, factory: &mut F) -> Sprite<Texture<R>>
         where F: gfx::Factory<R>, R: gfx::Resources
     {
@@ -107,7 +107,7 @@ impl Menu {
     }
 }
 
-impl SpriteMeta for Menu {
+impl SpritePrototype for Menu {
     fn make_sprite<F, R>(&mut self, factory: &mut F) -> Sprite<Texture<R>>
         where F: gfx::Factory<R>, R: gfx::Resources
     {
