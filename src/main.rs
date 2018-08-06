@@ -92,6 +92,14 @@ fn main() {
                             }
                         }
                     }
+                },
+                Key::Left => {
+                    if h5pointer != PathBuf::from("/") {
+                        h5pointer.pop();
+                        scene.remove_child(menu.uuid_self.unwrap());
+                        menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
+                        register_menu(&mut scene, &mut menu, &mut window.factory);
+                    }
                 }
                 _ => {}
             }
