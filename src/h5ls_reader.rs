@@ -167,7 +167,7 @@ impl H5Dataset {
             })
     }
 
-    pub fn get_format(&self) -> String {
+    pub fn format(&self) -> String {
         H5Dataset::shape_to_format(&self.shape)
     }
 }

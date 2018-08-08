@@ -33,7 +33,7 @@ pub trait MenuAdapter<T> {
 pub struct MenuEntry {
     pub label: String,
     pub font: VGUIFont,
-
+    pub tag: Option<String>,
     offset: usize
 }
 
@@ -62,10 +62,14 @@ impl SpritePrototype for MenuEntry {
         const WIDTH: u32 = COLUMN_WIDTH;
         let mut image = RgbaImage::new(WIDTH, HEIGHT);
         let scale = rusttype::Scale { x: HEIGHT as f32, y: HEIGHT as f32 };
+        let scale_tag = rusttype::Scale { x: scale.x * 0.6, y: scale.y * 0.6 };
         if cfg!(debug_assertions) {
             imageproc::drawing::draw_hollow_rect_mut(&mut image, Rect::at(0, 0).of_size(WIDTH, HEIGHT), Rgba([0u8, 0u8, 255u8, 255u8]));
         }
         imageproc::drawing::draw_text_mut(&mut image, Rgba([0u8, 0u8, 255u8, 255u8]), 0, 0, scale, self.font.borrow(), &self.label);
+        if let Some(tag) = &self.tag {
+            imageproc::drawing::draw_text_mut(&mut image, Rgba([0u8, 0u8, 255u8, 255u8]), WIDTH - 45, 0, scale_tag, self.font.borrow(), tag);
+        }
         let tex = Rc::new(Texture::from_image(
             factory,
             &image,
@@ -82,7 +86,7 @@ impl Menu {
     pub fn new(entries: &Vec<String>, font: VGUIFont) -> Menu {
         let mut menu = Menu { cursor: 0, entries: Vec::new(), uuid_cursor: None, uuid_self: None };
         for (i, val) in entries.iter().enumerate() {
-            let entry = MenuEntry{ offset:i, label: val.clone(), font: Rc::clone(&font) };
+            let entry = MenuEntry{ offset:i, label: val.clone(), font: Rc::clone(&font), tag: None };
             menu.entries.push(entry);
         }
         return menu;

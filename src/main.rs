@@ -25,7 +25,14 @@ impl MenuAdapter<H5Group> for vgui::Menu {
         let ref mut menu_entries =
             if group.name == "/" { Vec::new() } else { vec![String::from("..")] };
         menu_entries.append(group_entries);
-        vgui::Menu::new(menu_entries, font)
+        let mut ret = vgui::Menu::new(menu_entries, font);
+        for entry in &mut ret.entries {
+            if &entry.label == ".." { continue; }
+            if let H5Obj::Dataset(dataset) = &group.children[&entry.label] {
+                entry.tag = Some(String::from(dataset.format()));
+            }
+        }
+        return ret;
     }
 }
 
