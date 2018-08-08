@@ -58,7 +58,7 @@ fn main() {
     let h5root = H5Group::parse("/home/alex/datasets/ucm-sample.h5.txt").expect("IO Error");
     let mut h5pointer = PathBuf::from(&h5root.name);
     let mut menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
-    register_menu(&mut scene, &mut menu, &mut window.factory); 
+    register_menu(&mut scene, &mut menu, &mut window.factory);
 
     while let Some(e) = window.next() {
         scene.event(&e);

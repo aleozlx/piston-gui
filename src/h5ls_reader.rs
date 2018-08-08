@@ -96,7 +96,9 @@ impl H5Group {
                         "Group" => {
                             let full_name = &captures["name"];
                             if full_name != "/" {
-                                // println!("G {}", full_name);
+                                if cfg!(debug_assertions) {
+                                    println!("G {}", full_name);
+                                }
                                 let full_name = PathBuf::from(full_name);
                                 loop {
                                     match subgroup(&spath, &full_name) {
@@ -129,8 +131,10 @@ impl H5Group {
                                     .map(|x| x.parse().expect("Error occurred when parsing dataset shape."))
                                     .collect()
                                 };
-                            let _format = H5Dataset::shape_to_format(&shape);
-                            // println!("D {} {}", full_name, format);
+                            if cfg!(debug_assertions) {
+                                let format = H5Dataset::shape_to_format(&shape);
+                                println!("D {} {}", full_name, format);
+                            }
                             let full_name = PathBuf::from(full_name);
                             let dataset_name = String::from(full_name.file_name().unwrap().to_str().unwrap());
                             root.locate_group_mut(&spath).children.insert(
