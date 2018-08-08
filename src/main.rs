@@ -42,6 +42,7 @@ fn main() {
     let mut window: PistonWindow =
         WindowSettings::new("piston: sprite", (width, height))
         .exit_on_esc(true)
+        // .fullscreen(true)
         .opengl(opengl)
         .build()
         .unwrap();

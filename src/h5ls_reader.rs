@@ -13,7 +13,8 @@ pub struct H5Group {
 }
 
 pub struct H5Dataset {
-    pub name: String
+    pub name: String,
+    pub shape: Vec<usize>
 }
 
 pub enum H5Obj{
@@ -118,12 +119,23 @@ impl H5Group {
                         },
                         "Dataset" => {
                             let full_name = &captures["name"];
-                            // println!("D {}", full_name);
+                            let rule_dataset = Regex::new(r"^(?P<name>[^ ]+)\s+Dataset\s+\{(?P<shape>[0-9, ]*|SCALAR)\}$").unwrap();
+                            let m = rule_dataset.captures(&line).expect("Malformed dataset metadata.");
+                            // TODO could be scalar
+                            let shape: Vec<usize> =
+                                if &m["shape"] == "SCALAR" { Vec::new() }
+                                else {
+                                    m["shape"].split(", ")
+                                    .map(|x| x.parse().expect("Error occurred when parsing dataset shape."))
+                                    .collect()
+                                };
+                            let _format = H5Dataset::shape_to_format(&shape);
+                            // println!("D {} {}", full_name, format);
                             let full_name = PathBuf::from(full_name);
                             let dataset_name = String::from(full_name.file_name().unwrap().to_str().unwrap());
                             root.locate_group_mut(&spath).children.insert(
                                 dataset_name.clone(),
-                                H5Obj::from(H5Dataset { name: dataset_name.clone() }));
+                                H5Obj::from(H5Dataset { name: dataset_name.clone(), shape: shape }));
                         },
                         _ => ()
                     }
@@ -133,6 +145,30 @@ impl H5Group {
             
         }
         Ok(root)
+    }
+}
+
+impl H5Dataset {
+    fn shape_to_format(shape: &Vec<usize>) -> String {
+        String::from(
+            match shape.len() {
+                0 => "Param",
+                1 => "Scalar",
+                2 => "Vec",
+                3 => "Gray",
+                dims if dims >=4 =>
+                    match shape.iter().last().unwrap() {
+                        1 => "Gray",
+                        3 => "Color",
+                        4 => "RGBD",
+                        _ => "Hyper"
+                    }
+                _ => ""
+            })
+    }
+
+    pub fn get_format(&self) -> String {
+        H5Dataset::shape_to_format(&self.shape)
     }
 }
 
