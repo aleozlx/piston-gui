@@ -7,10 +7,13 @@ extern crate imageproc;
 extern crate rusttype;
 extern crate gfx;
 extern crate regex;
+extern crate flate2;
 
 mod vgui;
 mod h5ls_reader;
 use std::rc::Rc;
+use std::io::prelude::*;
+use std::net::TcpStream;
 use std::path::PathBuf;
 use vgui::SpritePrototype;
 use vgui::MenuAdapter;
@@ -18,6 +21,7 @@ use vgui::VGUIFont;
 use h5ls_reader::{H5Obj, H5Group, H5Dataset};
 use piston_window::*;
 use sprite::*;
+use flate2::read::GzDecoder;
 
 impl MenuAdapter<H5Group> for vgui::Menu {
     fn adapt(group: &H5Group, font: VGUIFont) -> vgui::Menu {
@@ -43,6 +47,18 @@ fn register_menu<F, R>(scene: &mut sprite::Scene<piston_window::Texture<R>>, men
     menu.uuid_self = Some(scene.add_child(s_menu));   
 }
 
+fn test_h5slice() {
+    let mut stream = TcpStream::connect("localhost:8000").unwrap();
+    let mut buffer = Box::new([0;2000000]);
+    // ignore the Result
+    let _ = stream.write("hi\n".as_bytes());
+    if let Ok(n) = stream.read(buffer.as_mut()) {
+        println!("Read {} bytes from network", n);
+        let mut d = GzDecoder::new(buffer);
+    }
+    
+}
+
 fn main() {
     let (width, height) = (800, 600);
     let opengl = OpenGL::V3_2;
@@ -59,6 +75,8 @@ fn main() {
     let mut h5pointer = PathBuf::from(&h5root.name);
     let mut menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
     register_menu(&mut scene, &mut menu, &mut window.factory);
+
+    test_h5slice();
 
     while let Some(e) = window.next() {
         scene.event(&e);

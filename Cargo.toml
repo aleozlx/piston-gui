@@ -15,3 +15,7 @@ imageproc = "0.15.0"
 rusttype = "0.5"
 uuid = "*"
 regex = "1"
+flate2 = { version = "1.0", features = ["zlib"], default-features = false }
+#pyo3 = "0.3"
+#numpy = "*"
+#ndarray = "*"
