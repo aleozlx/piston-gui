@@ -12,6 +12,7 @@ extern crate flate2;
 mod vgui;
 mod h5ls_reader;
 use std::rc::Rc;
+use std::{mem, slice};
 use std::io::prelude::*;
 use std::net::TcpStream;
 use std::path::PathBuf;
@@ -22,6 +23,7 @@ use h5ls_reader::{H5Obj, H5Group, H5Dataset};
 use piston_window::*;
 use sprite::*;
 use flate2::read::GzDecoder;
+use image::Pixel;
 
 impl MenuAdapter<H5Group> for vgui::Menu {
     fn adapt(group: &H5Group, font: VGUIFont) -> vgui::Menu {
@@ -47,21 +49,30 @@ fn register_menu<F, R>(scene: &mut sprite::Scene<piston_window::Texture<R>>, men
     menu.uuid_self = Some(scene.add_child(s_menu));   
 }
 
-fn test_h5slice() {
+fn test_h5slice() -> Option<image::RgbaImage> {
     let mut stream = TcpStream::connect("localhost:8000").unwrap();
     let mut buffer_in = Vec::with_capacity(8<<10);
     let mut buffer_out = Vec::with_capacity(4<<20);
-    // ignore the Result
     let _ = stream.write("hi\n".as_bytes());
     if let Ok(n) = stream.read_to_end(&mut buffer_in) {
         println!("Read {} bytes from network.", n);
         let mut decoder = GzDecoder::new(&buffer_in[..]);
         match decoder.read_to_end(&mut buffer_out) {
-            Ok(n) => {println!("Decompressed into {} bytes.", n);},
+            Ok(n) => {
+                println!("Decompressed into {} bytes.", n);
+                let im_raw: Vec<u8> = unsafe {
+                    slice::from_raw_parts(buffer_out.as_ptr() as *const f32, n/mem::size_of::<f32>())
+                }.into_iter().map(|x| {(x+127.0) as u8}).collect();
+
+                let im_rgb: image::RgbImage = image::ImageBuffer::from_raw(224, 224, im_raw).expect("Error when constructing RgbImage");
+                let im_rgba: image::RgbaImage = image::ImageBuffer::from_fn(224, 224,
+                    |x, y| { im_rgb.get_pixel(x, y).to_rgba() });
+                return Some(im_rgba);
+            },
             Err(err) => {println!("Error: {}", err);}
         }
     }
-    
+    return None;
 }
 
 fn main() {
@@ -81,7 +92,12 @@ fn main() {
     let mut menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
     register_menu(&mut scene, &mut menu, &mut window.factory);
 
-    test_h5slice();
+    let im_test = test_h5slice();
+    let tex = Texture::from_image(
+        &mut window.factory,
+        &im_test.unwrap(),
+        &TextureSettings::new()
+    ).unwrap();
 
     while let Some(e) = window.next() {
         scene.event(&e);
@@ -89,6 +105,7 @@ fn main() {
         window.draw_2d(&e, |c, g| {
             clear([1.0, 1.0, 1.0, 1.0], g);
             scene.draw(c.transform, g);
+            image(&tex, c.transform, g);
         });
 
         if let Some(Button::Keyboard(key)) = e.press_args() {
