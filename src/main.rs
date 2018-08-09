@@ -49,12 +49,17 @@ fn register_menu<F, R>(scene: &mut sprite::Scene<piston_window::Texture<R>>, men
 
 fn test_h5slice() {
     let mut stream = TcpStream::connect("localhost:8000").unwrap();
-    let mut buffer = Box::new([0;2000000]);
+    let mut buffer_in = Vec::with_capacity(8<<10);
+    let mut buffer_out = Vec::with_capacity(4<<20);
     // ignore the Result
     let _ = stream.write("hi\n".as_bytes());
-    if let Ok(n) = stream.read(buffer.as_mut()) {
-        println!("Read {} bytes from network", n);
-        let mut d = GzDecoder::new(buffer);
+    if let Ok(n) = stream.read_to_end(&mut buffer_in) {
+        println!("Read {} bytes from network.", n);
+        let mut decoder = GzDecoder::new(&buffer_in[..]);
+        match decoder.read_to_end(&mut buffer_out) {
+            Ok(n) => {println!("Decompressed into {} bytes.", n);},
+            Err(err) => {println!("Error: {}", err);}
+        }
     }
     
 }
