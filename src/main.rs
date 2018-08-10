@@ -45,8 +45,11 @@ impl MenuAdapter<H5Group> for vgui::Menu {
 fn register_menu<F, R>(scene: &mut sprite::Scene<piston_window::Texture<R>>, menu: &mut vgui::Menu, factory: &mut F)
     where F: gfx::Factory<R>, R: gfx::Resources {
     let mut s_menu = menu.make_sprite(factory);
-    s_menu.set_position(15.0, 15.0);
-    menu.uuid_self = Some(scene.add_child(s_menu));   
+    s_menu.set_position(-300.0, 15.0);
+    menu.uuid_self = Some(scene.add_child(s_menu));
+    scene.run(menu.uuid_self.unwrap(),
+        &ai_behavior::Action(Ease(EaseFunction::ExponentialIn,
+            Box::new(MoveTo(0.2, 15.0, 15.0)))));
 }
 
 fn test_h5slice() -> Option<image::RgbaImage> {
@@ -62,7 +65,7 @@ fn test_h5slice() -> Option<image::RgbaImage> {
                 println!("Decompressed into {} bytes.", n);
                 let im_raw: Vec<u8> = unsafe {
                     slice::from_raw_parts(buffer_out.as_ptr() as *const f32, n/mem::size_of::<f32>())
-                }.into_iter().map(|x| {(x+127.0) as u8}).collect();
+                }.into_iter().map(|x| {(x+100.0) as u8}).collect();
 
                 let im_rgb: image::RgbImage = image::ImageBuffer::from_raw(224, 224, im_raw).expect("Error when constructing RgbImage");
                 let im_rgba: image::RgbaImage = image::ImageBuffer::from_fn(224, 224,
@@ -93,11 +96,15 @@ fn main() {
     register_menu(&mut scene, &mut menu, &mut window.factory);
 
     let im_test = test_h5slice();
-    let tex = Texture::from_image(
+    let tex = Rc::new(Texture::from_image(
         &mut window.factory,
         &im_test.unwrap(),
         &TextureSettings::new()
-    ).unwrap();
+    ).unwrap());
+    let sprite_tex = Sprite::from_texture(tex.clone());
+    let id_tex = scene.add_child(sprite_tex);
+    scene.run(id_tex, &ai_behavior::Action(Ease(EaseFunction::CircularInOut, Box::new(MoveTo(0.5, 115.0, 320.0)))));
+    
 
     while let Some(e) = window.next() {
         scene.event(&e);
@@ -105,7 +112,6 @@ fn main() {
         window.draw_2d(&e, |c, g| {
             clear([1.0, 1.0, 1.0, 1.0], g);
             scene.draw(c.transform, g);
-            image(&tex, c.transform, g);
         });
 
         if let Some(Button::Keyboard(key)) = e.press_args() {
