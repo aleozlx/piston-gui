@@ -53,10 +53,11 @@ fn register_menu<F, R>(scene: &mut sprite::Scene<piston_window::Texture<R>>, men
 }
 
 fn test_h5slice() -> Option<image::RgbaImage> {
-    let mut stream = TcpStream::connect("localhost:8000").unwrap();
+    // TODO handle connection error gracefully.
+    let mut stream = TcpStream::connect("localhost:8000").expect("Cannot connect to stream.");
     let mut buffer_in = Vec::with_capacity(8<<10);
     let mut buffer_out = Vec::with_capacity(4<<20);
-    let _ = stream.write("hi\n".as_bytes());
+    let _ = stream.write("/home/alex/datasets/ucm-sample.h5\t/source/images\t13\tf4\n".as_bytes());
     if let Ok(n) = stream.read_to_end(&mut buffer_in) {
         println!("Read {} bytes from network.", n);
         let mut decoder = GzDecoder::new(&buffer_in[..]);
@@ -95,6 +96,7 @@ fn main() {
     let mut menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
     register_menu(&mut scene, &mut menu, &mut window.factory);
 
+    // TODO handle im_test being None
     let im_test = test_h5slice();
     let tex = Rc::new(Texture::from_image(
         &mut window.factory,
