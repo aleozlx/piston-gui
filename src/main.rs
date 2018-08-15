@@ -10,14 +10,14 @@ extern crate regex;
 extern crate flate2;
 
 mod vgui;
-mod h5ls_reader;
+mod h5meta;
 mod h5slice;
 use std::rc::Rc;
 use std::path::PathBuf;
 use vgui::SpritePrototype;
 use vgui::MenuAdapter;
 use vgui::VGUIFont;
-use h5ls_reader::{H5Obj, H5Group, H5Dataset};
+use h5meta::{H5Obj, H5Group, H5Dataset};
 use h5slice::{H5URI, Dtype};
 use piston_window::*;
 use sprite::*;
