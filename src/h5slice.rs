@@ -5,42 +5,51 @@ use std::{mem, slice};
 use std::io::prelude::*;
 use std::net::TcpStream;
 use flate2::read::GzDecoder;
-use std::ops::Deref;
-use image::Pixel;
+use std::string::ToString;
 
-// fn as_rgba<Image, Pixel>(im_input: Image, size: (u32, u32)) -> image::RgbaImage
-//     where Image: image::GenericImage<Pixel=Pixel>,
-//         Pixel: image::Pixel
-// {
-//     image::ImageBuffer::from_fn(size.0, size.1,
-//         |x, y| { im_input.get_pixel(x, y).to_rgba() })
-// }
+pub enum Dtype {
+    I4, I8, F4, F8
+}
 
-pub fn get_one() -> Option<image::RgbaImage> {
-    // TODO handle connection error gracefully.
-    let mut stream = TcpStream::connect("localhost:8000").expect("Cannot connect to stream.");
-    let mut buffer_in = Vec::with_capacity(8<<10);
-    let mut buffer_out = Vec::with_capacity(4<<20);
-    let _ = stream.write("/home/alex/datasets/ucm-sample.h5\t/source/images\t13\tf4\n".as_bytes());
-    if let Ok(n) = stream.read_to_end(&mut buffer_in) {
-        println!("Read {} bytes from network.", n);
-        let mut decoder = GzDecoder::new(&buffer_in[..]);
-        match decoder.read_to_end(&mut buffer_out) {
-            Ok(n) => {
-                println!("Decompressed into {} bytes.", n);
-                let im_raw: Vec<u8> = unsafe {
-                    slice::from_raw_parts(buffer_out.as_ptr() as *const f32, n/mem::size_of::<f32>())
-                }.into_iter().map(|x| {(x+100.0) as u8}).collect();
+pub struct H5URI {
+    pub path: String,
+    pub h5path: String,
+    pub query: String,
+    pub dtype: Dtype
+}
 
-                let im_rgb: image::RgbImage = image::ImageBuffer::from_raw(224, 224, im_raw).expect("Error when constructing RgbImage");
-                let im_dynamic = image::DynamicImage::ImageRgb8(im_rgb);
-                return Some(im_dynamic.to_rgba());
-                // let im_rgba: image::RgbaImage = image::ImageBuffer::from_fn(224, 224,
-                //     |x, y| { im_rgb.get_pixel(x, y).to_rgba() });
-                // return Some(im_rgba);
-            },
-            Err(err) => { println!("Error: {}", err); }
+impl ToString for Dtype {
+    fn to_string(&self) -> String {
+        match self {
+            Dtype::I4 => String::from("i4"),
+            Dtype::I8 => String::from("i8"),
+            Dtype::F4 => String::from("f4"),
+            Dtype::F8 => String::from("f8"),
         }
     }
-    return None;
+}
+
+impl ToString for H5URI {
+    fn to_string(&self) -> String {
+        [self.path.clone(), self.h5path.clone(), self.query.clone(), self.dtype.to_string()].join("\t")
+    }
+}
+
+pub fn get_one(uri: H5URI) -> Option<image::RgbaImage> {
+    let mut stream = TcpStream::connect("localhost:8000").ok()?;
+    let mut buffer_in = Vec::with_capacity(8<<10);
+    let mut buffer_out = Vec::with_capacity(4<<20);
+    let _ = stream.write(uri.to_string().as_bytes());
+    let n = stream.read_to_end(&mut buffer_in).ok()?;
+    if cfg!(debug_assertions) { println!("Read {} bytes from network.", n); }
+    let mut decoder = GzDecoder::new(&buffer_in[..]);
+    let n = decoder.read_to_end(&mut buffer_out).ok()?;
+    if cfg!(debug_assertions) { println!("Decompressed into {} bytes.", n); }
+    // TODO get resolution from server
+    const WIDTH: u32 = 224;
+    const HEIGHT: u32 = 224;
+    let im_rgb = image::ImageBuffer::from_raw(WIDTH, HEIGHT,
+        unsafe { slice::from_raw_parts(buffer_out.as_ptr() as *const f32, n/mem::size_of::<f32>()) }
+            .into_iter().map(|x| {(x+100.0) as u8}).collect())?;
+    Some(image::DynamicImage::ImageRgb8(im_rgb).to_rgba())
 }

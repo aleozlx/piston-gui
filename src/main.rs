@@ -13,18 +13,14 @@ mod vgui;
 mod h5ls_reader;
 mod h5slice;
 use std::rc::Rc;
-use std::{mem, slice};
-use std::io::prelude::*;
-use std::net::TcpStream;
 use std::path::PathBuf;
 use vgui::SpritePrototype;
 use vgui::MenuAdapter;
 use vgui::VGUIFont;
 use h5ls_reader::{H5Obj, H5Group, H5Dataset};
+use h5slice::{H5URI, Dtype};
 use piston_window::*;
 use sprite::*;
-use flate2::read::GzDecoder;
-use image::Pixel;
 
 impl MenuAdapter<H5Group> for vgui::Menu {
     fn adapt(group: &H5Group, font: VGUIFont) -> vgui::Menu {
@@ -71,7 +67,12 @@ fn main() {
     register_menu(&mut scene, &mut menu, &mut window.factory);
 
     // TODO handle im_test being None
-    let im_test = h5slice::get_one();
+    let im_test = h5slice::get_one(H5URI{
+        path: String::from("/home/alex/datasets/ucm-sample.h5"),
+        h5path: String::from("/source/images"),
+        query: String::from("13"),
+        dtype: Dtype::F4
+    });
     let tex = Rc::new(Texture::from_image(
         &mut window.factory,
         &im_test.unwrap(),
