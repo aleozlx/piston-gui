@@ -45,7 +45,7 @@ pub fn get_one(uri: H5URI) -> Option<image::RgbaImage> {
     let mut decoder = GzDecoder::new(&buffer_in[..]);
     let n = decoder.read_to_end(&mut buffer_out).ok()?;
     if cfg!(debug_assertions) { println!("Decompressed into {} bytes.", n); }
-    // TODO get resolution from server
+    // TODO get resolution from h5meta
     const WIDTH: u32 = 224;
     const HEIGHT: u32 = 224;
     let im_rgb = image::ImageBuffer::from_raw(WIDTH, HEIGHT,

@@ -23,6 +23,7 @@ pub enum H5Obj{
 }
 
 impl H5Group {
+    // TODO implement locate functions at H5Obj and consolidate different functions
     pub fn locate_group_mut<P: AsRef<Path>>(&mut self, path: P) -> &mut H5Group {
         let path = path.as_ref();
         // println!("locate_group_mut {} {:#?}", &self.name, path);
@@ -82,6 +83,7 @@ impl H5Group {
     //     a
     // }
 
+    // TODO refactor: return H5Obj result instead of H5Group result
     pub fn parse<P: AsRef<Path>>(fname: P) -> std::io::Result<H5Group> {
         let rule = Regex::new(r"^(?P<name>[^ ]+)\s+(?P<type>Group|Dataset)").unwrap();
         let file = File::open(fname)?;

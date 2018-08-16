@@ -118,6 +118,8 @@ fn main() {
                                     register_menu(&mut scene, &mut menu, &mut window.factory);
                                 }
                                 else {
+                                    // TODO locate dataset and read shape
+                                    // TODO make a sample query
                                     h5pointer.pop();
                                 }
                             }
