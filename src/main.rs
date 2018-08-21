@@ -62,7 +62,7 @@ fn main() {
     let mut scene = Scene::new();
     let font = vgui::load_font("FiraSans-Regular.ttf").expect("Cannot load font.");
     let h5root = H5Group::parse("/home/alex/datasets/ucm-sample.h5.txt").expect("IO Error");
-    let mut h5pointer = PathBuf::from(&h5root.name);
+    let mut h5pointer = PathBuf::from(&h5root.name());
     let mut menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
     register_menu(&mut scene, &mut menu, &mut window.factory);
 
@@ -112,7 +112,7 @@ fn main() {
                             },
                             _ => {
                                 h5pointer.push(entry);
-                                if h5root.is_group(&h5pointer) {
+                                if h5root.is_path_to_group(&h5pointer) {
                                     scene.remove_child(menu.uuid_self.unwrap());
                                     menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
                                     register_menu(&mut scene, &mut menu, &mut window.factory);
