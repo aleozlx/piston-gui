@@ -23,8 +23,7 @@ pub enum H5Obj{
 }
 
 impl H5Group {
-    // TODO implement locate functions at H5Obj and consolidate different functions
-    fn locate_group_mut<P: AsRef<Path>>(&mut self, path: P) -> &mut H5Group {
+    fn locate_mut<P: AsRef<Path>>(&mut self, path: P) -> &mut H5Group {
         let path = path.as_ref();
         // println!("locate_group_mut {} {:#?}", &self.name, path);
         let mut components = path.components();
@@ -41,7 +40,7 @@ impl H5Group {
             Some(group_component) => {
                 let group_name = group_component.as_os_str().to_str().unwrap(); 
                 self.children.get_mut(group_name).expect(&format!("Group \"{}\" doesn't exist.", group_name))
-                    .to_group_mut().locate_group_mut(components.as_path())
+                    .to_group_mut().locate_mut(components.as_path())
             }
         }
     }
@@ -68,7 +67,7 @@ impl H5Group {
                                 loop {
                                     match subgroup(&spath, &full_name) {
                                         Some(group_name) => {
-                                            root.locate_group_mut(&spath).children.insert(
+                                            root.locate_mut(&spath).children.insert(
                                                 group_name.clone(),
                                                 H5Obj::from(H5Group {
                                                     name: group_name.clone(),
@@ -102,7 +101,8 @@ impl H5Group {
                             }
                             let full_name = PathBuf::from(full_name);
                             let dataset_name = String::from(full_name.file_name().unwrap().to_str().unwrap());
-                            root.locate_group_mut(&spath).children.insert(
+                            // ? optimize by keeping track of stack top?
+                            root.locate_mut(&spath).children.insert(
                                 dataset_name.clone(),
                                 H5Obj::from(H5Dataset { name: dataset_name.clone(), shape: shape }));
                         },
@@ -171,15 +171,15 @@ impl From<H5Dataset> for H5Obj {
 }
 
 impl H5Obj {
-    pub fn is_group(&self) -> bool {
-        if let H5Obj::Group(g) = self { true }
-        else { false }
-    }
+    // pub fn is_group(&self) -> bool {
+    //     if let H5Obj::Group(g) = self { true }
+    //     else { false }
+    // }
 
-    pub fn is_dataset(&self) -> bool {
-        if let H5Obj::Dataset(g) = self { true }
-        else { false }
-    }
+    // pub fn is_dataset(&self) -> bool {
+    //     if let H5Obj::Dataset(g) = self { true }
+    //     else { false }
+    // }
 
     fn to_group_mut(&mut self) -> &mut H5Group {
         if let H5Obj::Group(g) = self { g }
@@ -222,14 +222,14 @@ impl H5Obj {
     pub fn locate_group<P: AsRef<Path>>(&self, path: P) -> Option<&H5Group> {
         match self.locate(path) {
             H5Obj::Group(g) => Some(&g),
-            H5Obj::Dataset(d) => None
+            H5Obj::Dataset(_) => None
         }
     }
 
     pub fn locate_dataset<P: AsRef<Path>>(&self, path: P) -> Option<&H5Dataset> {
         match self.locate(path) {
             H5Obj::Dataset(d) => Some(&d),
-            H5Obj::Group(g) => None
+            H5Obj::Group(_) => None
         }
     }
 }

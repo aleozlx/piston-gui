@@ -112,15 +112,17 @@ fn main() {
                             },
                             _ => {
                                 h5pointer.push(entry);
-                                if let Some(g) = h5root.locate_group(&h5pointer){
-                                    scene.remove_child(menu.uuid_self.unwrap());
-                                    menu = vgui::Menu::adapt(g, Rc::clone(&font));
-                                    register_menu(&mut scene, &mut menu, &mut window.factory);
-                                }
-                                else {
-                                    // TODO locate dataset and read shape
-                                    // TODO make a sample query
-                                    h5pointer.pop();
+                                match h5root.locate(&h5pointer) {
+                                    H5Obj::Group(g) => {
+                                        scene.remove_child(menu.uuid_self.unwrap());
+                                        menu = vgui::Menu::adapt(g, Rc::clone(&font));
+                                        register_menu(&mut scene, &mut menu, &mut window.factory);
+                                    },
+                                    H5Obj::Dataset(d) => {
+                                        // TODO locate dataset and read shape
+                                        // TODO make a sample query
+                                        h5pointer.pop();
+                                    }
                                 }
                             }
                         }
