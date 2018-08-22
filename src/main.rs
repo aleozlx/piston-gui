@@ -63,7 +63,7 @@ fn main() {
     let font = vgui::load_font("FiraSans-Regular.ttf").expect("Cannot load font.");
     let h5root = H5Group::parse("/home/alex/datasets/ucm-sample.h5.txt").expect("IO Error");
     let mut h5pointer = PathBuf::from(&h5root.name());
-    let mut menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
+    let mut menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer).unwrap(), Rc::clone(&font));
     register_menu(&mut scene, &mut menu, &mut window.factory);
 
     // TODO handle im_test being None
@@ -107,14 +107,14 @@ fn main() {
                             ".." => {
                                 scene.remove_child(menu.uuid_self.unwrap());
                                 h5pointer.pop();
-                                menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
+                                menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer).unwrap(), Rc::clone(&font));
                                 register_menu(&mut scene, &mut menu, &mut window.factory); 
                             },
                             _ => {
                                 h5pointer.push(entry);
-                                if h5root.is_path_to_group(&h5pointer) {
+                                if let Some(g) = h5root.locate_group(&h5pointer){
                                     scene.remove_child(menu.uuid_self.unwrap());
-                                    menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
+                                    menu = vgui::Menu::adapt(g, Rc::clone(&font));
                                     register_menu(&mut scene, &mut menu, &mut window.factory);
                                 }
                                 else {
@@ -130,7 +130,7 @@ fn main() {
                     if h5pointer != PathBuf::from("/") {
                         h5pointer.pop();
                         scene.remove_child(menu.uuid_self.unwrap());
-                        menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer), Rc::clone(&font));
+                        menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer).unwrap(), Rc::clone(&font));
                         register_menu(&mut scene, &mut menu, &mut window.factory);
                     }
                 }

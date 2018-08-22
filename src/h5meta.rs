@@ -46,11 +46,6 @@ impl H5Group {
         }
     }
 
-    // pub fn locate<P: AsRef<Path>>(&self, path: P) -> &H5Obj {
-    //     let ref a = H5Obj::from(self);
-    //     a
-    // }
-
     pub fn parse<P: AsRef<Path>>(fname: P) -> std::io::Result<H5Obj> {
         let rule = Regex::new(r"^(?P<name>[^ ]+)\s+(?P<type>Group|Dataset)").unwrap();
         let file = File::open(fname)?;
@@ -224,35 +219,17 @@ impl H5Obj {
         }
     }
 
-    pub fn locate_group<P: AsRef<Path>>(&self, path: P) -> &H5Group {
-        let path = path.as_ref();
-        let mut components = path.components();
-        if path.is_absolute() {
-            if self.name() == "/" {
-                components.next(); // skip root
-            }
-            else { panic!("Absolute path cannot be traced from here."); }
-        }
-
-        let next = components.next();
-        match next {
-            None => self.to_group(),
-            Some(group_component) => {
-                let group_name = group_component.as_os_str().to_str().unwrap(); 
-                self.to_group().children.get(group_name).expect(&format!("Group \"{}\" doesn't exist.", group_name))
-                    .locate_group(components.as_path())
-            }
+    pub fn locate_group<P: AsRef<Path>>(&self, path: P) -> Option<&H5Group> {
+        match self.locate(path) {
+            H5Obj::Group(g) => Some(&g),
+            H5Obj::Dataset(d) => None
         }
     }
 
-    pub fn is_path_to_group<P: AsRef<Path>>(&self, path: P) -> bool {
-        let path = path.as_ref();
-        match path.parent() {
-            Some(parent) => {
-                let name = path.file_name().unwrap().to_str().unwrap();
-                self.locate_group(parent).children.get(name).unwrap().is_group()
-            },
-            None => true
+    pub fn locate_dataset<P: AsRef<Path>>(&self, path: P) -> Option<&H5Dataset> {
+        match self.locate(path) {
+            H5Obj::Dataset(d) => Some(&d),
+            H5Obj::Group(g) => None
         }
     }
 }
