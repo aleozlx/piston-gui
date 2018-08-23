@@ -192,16 +192,6 @@ impl From<H5Dataset> for H5Obj {
 }
 
 impl H5Obj {
-    // pub fn is_group(&self) -> bool {
-    //     if let H5Obj::Group(g) = self { true }
-    //     else { false }
-    // }
-
-    // pub fn is_dataset(&self) -> bool {
-    //     if let H5Obj::Dataset(g) = self { true }
-    //     else { false }
-    // }
-
     fn to_group_mut(&mut self) -> &mut H5Group {
         if let H5Obj::Group(g) = self { g }
         else { panic!("Failed to cast H5Obj into H5Group.") }
@@ -247,12 +237,12 @@ impl H5Obj {
         }
     }
 
-    pub fn locate_dataset<P: AsRef<Path>>(&self, path: P) -> Option<&H5Dataset> {
-        match self.locate(path) {
-            H5Obj::Dataset(d) => Some(&d),
-            H5Obj::Group(_) => None
-        }
-    }
+    // pub fn locate_dataset<P: AsRef<Path>>(&self, path: P) -> Option<&H5Dataset> {
+    //     match self.locate(path) {
+    //         H5Obj::Dataset(d) => Some(&d),
+    //         H5Obj::Group(_) => None
+    //     }
+    // }
 }
 
 impl std::fmt::Display for Resolution {
