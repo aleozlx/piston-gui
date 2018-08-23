@@ -119,7 +119,7 @@ fn main() {
                                         register_menu(&mut scene, &mut menu, &mut window.factory);
                                     },
                                     H5Obj::Dataset(d) => {
-                                        if let Some(resolution) = d.resolution() {
+                                        if let Some(resolution) = d.resolution_batch_images() {
                                             println!("resolution {}", &resolution);
                                         }
                                         else {

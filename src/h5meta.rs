@@ -143,12 +143,30 @@ impl H5Dataset {
 
     pub fn resolution(&self) -> Option<Resolution> {
         match self.shape.len() {
-            // shape when 2<=dims<=3: batch height width
+            // shape when 2<=dims<=3: batch? height width
             dims if dims >= 2 && dims <=3 =>
                 Some(Resolution{ width: self.shape[dims - 1], height: self.shape[dims - 2] }),
-            // shape when dims>=4: batch ... height width channels
+            // shape when dims>=4: batch? ... height width channels
             dims if dims >=4 =>
                 Some(Resolution{ width: self.shape[dims - 2], height: self.shape[dims - 3] }),
+            _ => None
+        }
+    }
+
+    pub fn resolution_single_image(&self) -> Option<Resolution> {
+        match self.shape.len() {
+            // shape when 2<=dims<=3: height width channels?
+            dims if dims >= 2 && dims <=3 =>
+                Some(Resolution{ width: self.shape[1], height: self.shape[0] }),
+            _ => None
+        }
+    }
+
+    pub fn resolution_batch_images(&self) -> Option<Resolution> {
+        match self.shape.len() {
+            // shape when 3<=dims<=4: batch height width channels?
+            dims if dims >= 3 && dims <=4 =>
+                Some(Resolution{ width: self.shape[2], height: self.shape[1] }),
             _ => None
         }
     }
