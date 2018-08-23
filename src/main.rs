@@ -55,7 +55,7 @@ fn main() {
     let mut window: PistonWindow =
         WindowSettings::new("piston: sprite", (width, height))
         .exit_on_esc(true)
-        .fullscreen(true)
+        // .fullscreen(true)
         .opengl(opengl)
         .build()
         .unwrap();
@@ -119,7 +119,7 @@ fn main() {
                                         register_menu(&mut scene, &mut menu, &mut window.factory);
                                     },
                                     H5Obj::Dataset(d) => {
-                                        // TODO locate dataset and read shape
+                                        println!("{:?}", &d.shape);
                                         // TODO make a sample query
                                         h5pointer.pop();
                                     }
