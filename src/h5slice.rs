@@ -7,6 +7,7 @@ use std::net::TcpStream;
 use flate2::read::GzDecoder;
 use std::string::ToString;
 
+#[allow(dead_code)]
 pub enum Dtype {
     I4, I8, F4, F8
 }

@@ -17,7 +17,7 @@ use std::path::PathBuf;
 use vgui::SpritePrototype;
 use vgui::MenuAdapter;
 use vgui::VGUIFont;
-use h5meta::{H5Obj, H5Group, H5Dataset};
+use h5meta::{H5Obj, H5Group};
 use h5slice::{H5URI, Dtype};
 use piston_window::*;
 use sprite::*;

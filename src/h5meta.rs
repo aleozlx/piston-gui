@@ -141,6 +141,7 @@ impl H5Dataset {
             })
     }
 
+    #[allow(dead_code)]
     pub fn resolution(&self) -> Option<Resolution> {
         match self.shape.len() {
             // shape when 2<=dims<=3: batch? height width
@@ -153,6 +154,7 @@ impl H5Dataset {
         }
     }
 
+    #[allow(dead_code)]
     pub fn resolution_single_image(&self) -> Option<Resolution> {
         match self.shape.len() {
             // shape when 2<=dims<=3: height width channels?
@@ -162,6 +164,7 @@ impl H5Dataset {
         }
     }
 
+    #[allow(dead_code)]
     pub fn resolution_batch_images(&self) -> Option<Resolution> {
         match self.shape.len() {
             // shape when 3<=dims<=4: batch height width channels?
