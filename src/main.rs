@@ -119,7 +119,13 @@ fn main() {
                                         register_menu(&mut scene, &mut menu, &mut window.factory);
                                     },
                                     H5Obj::Dataset(d) => {
-                                        println!("{:?}", &d.shape);
+                                        if let Some(resolution) = d.resolution() {
+                                            println!("resolution {}", &resolution);
+                                        }
+                                        else {
+                                            println!("shape {:?}", &d.shape);
+                                        }
+                                        
                                         // TODO make a sample query
                                         h5pointer.pop();
                                     }

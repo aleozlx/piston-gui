@@ -234,6 +234,12 @@ impl H5Obj {
     }
 }
 
+impl std::fmt::Display for Resolution {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}x{}", self.width, self.height)
+    }
+}
+
 fn subgroup(parent: &PathBuf, child: &PathBuf) -> Option<String> {
     let tmp = child.strip_prefix(parent);
     match tmp {
