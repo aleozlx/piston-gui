@@ -66,21 +66,26 @@ fn main() {
     let mut menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer).unwrap(), Rc::clone(&font));
     register_menu(&mut scene, &mut menu, &mut window.factory);
 
-    // TODO handle im_test being None
-    let im_test = h5slice::get_one(H5URI{
+    if let Some(im_test) = h5slice::get_one(H5URI{
         path: String::from("/home/alex/datasets/ucm-sample.h5"),
         h5path: String::from("/source/images"),
         query: String::from("13"),
         dtype: Dtype::F4
-    });
-    let tex = Rc::new(Texture::from_image(
-        &mut window.factory,
-        &im_test.unwrap(),
-        &TextureSettings::new()
-    ).unwrap());
-    let sprite_tex = Sprite::from_texture(tex.clone());
-    let id_tex = scene.add_child(sprite_tex);
-    scene.run(id_tex, &ai_behavior::Action(Ease(EaseFunction::CircularInOut, Box::new(MoveTo(0.5, 115.0, 320.0)))));
+    }, (224,224)) {
+        let tex = Rc::new(Texture::from_image(
+            &mut window.factory,
+            &im_test,
+            &TextureSettings::new()
+        ).unwrap());
+        let sprite_tex = Sprite::from_texture(tex.clone());
+        let id_tex = scene.add_child(sprite_tex);
+    
+        scene.run(id_tex, &ai_behavior::Action(Ease(EaseFunction::CircularInOut, Box::new(MoveTo(0.5, 115.0, 320.0)))));
+    }
+    else {
+        println!("Not found!")
+    }
+    
     
 
     while let Some(e) = window.next() {

@@ -35,7 +35,7 @@ impl ToString for H5URI {
     }
 }
 
-pub fn get_one(uri: H5URI) -> Option<image::RgbaImage> {
+pub fn get_one(uri: H5URI, resolution: (u32, u32)) -> Option<image::RgbaImage> {
     let mut stream = TcpStream::connect("localhost:8000").ok()?;
     let mut buffer_in = Vec::with_capacity(8<<10);
     let mut buffer_out = Vec::with_capacity(4<<20);
@@ -45,10 +45,8 @@ pub fn get_one(uri: H5URI) -> Option<image::RgbaImage> {
     let mut decoder = GzDecoder::new(&buffer_in[..]);
     let n = decoder.read_to_end(&mut buffer_out).ok()?;
     if cfg!(debug_assertions) { println!("Decompressed into {} bytes.", n); }
-    // TODO get resolution from h5meta
-    const WIDTH: u32 = 224;
-    const HEIGHT: u32 = 224;
-    let im_rgb = image::ImageBuffer::from_raw(WIDTH, HEIGHT,
+    // TODO am I creating dangling reference here?
+    let im_rgb = image::ImageBuffer::from_raw(resolution.0, resolution.1,
         unsafe { slice::from_raw_parts(buffer_out.as_ptr() as *const f32, n/mem::size_of::<f32>()) }
             .into_iter().map(|x| {(x+100.0) as u8}).collect())?;
     Some(image::DynamicImage::ImageRgb8(im_rgb).to_rgba())
