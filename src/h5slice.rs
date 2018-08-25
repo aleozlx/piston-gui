@@ -18,6 +18,16 @@ pub struct H5URI {
     pub dtype: Dtype
 }
 
+pub struct H5Cache {
+    buffer: Vec<TexImage>
+}
+
+enum CacheState<'a> {
+    Hit(&'a TexImage),
+    Miss,
+    NotExist
+}
+
 impl ToString for Dtype {
     fn to_string(&self) -> String {
         match self {
@@ -35,7 +45,9 @@ impl ToString for H5URI {
     }
 }
 
-pub fn get_one(uri: H5URI, resolution: (u32, u32)) -> Option<image::RgbaImage> {
+pub type TexImage = image::RgbaImage;
+
+pub fn get_one(uri: H5URI, resolution: (u32, u32)) -> Option<TexImage> {
     let mut stream = TcpStream::connect("localhost:8000").ok()?;
     let mut buffer_in = Vec::with_capacity(8<<10);
     let mut buffer_out = Vec::with_capacity(4<<20);

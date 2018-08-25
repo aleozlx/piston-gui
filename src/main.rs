@@ -14,11 +14,12 @@ mod h5meta;
 mod h5slice;
 use std::rc::Rc;
 use std::path::PathBuf;
+use std::collections::HashMap;
 use vgui::SpritePrototype;
 use vgui::MenuAdapter;
 use vgui::VGUIFont;
 use h5meta::{H5Obj, H5Group};
-use h5slice::{H5URI, Dtype};
+use h5slice::{H5URI, Dtype, H5Cache};
 use piston_window::*;
 use sprite::*;
 
@@ -66,21 +67,25 @@ fn main() {
     let mut menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer).unwrap(), Rc::clone(&font));
     register_menu(&mut scene, &mut menu, &mut window.factory);
 
+    let mut image_cache = Vec::with_capacity(30);
+    
     if let Some(im_test) = h5slice::get_one(H5URI{
         path: String::from("/home/alex/datasets/ucm-sample.h5"),
         h5path: String::from("/source/images"),
         query: String::from("13"),
         dtype: Dtype::F4
     }, (224,224)) {
-        let tex = Rc::new(Texture::from_image(
-            &mut window.factory,
-            &im_test,
-            &TextureSettings::new()
-        ).unwrap());
-        let sprite_tex = Sprite::from_texture(tex.clone());
-        let id_tex = scene.add_child(sprite_tex);
-    
-        scene.run(id_tex, &ai_behavior::Action(Ease(EaseFunction::CircularInOut, Box::new(MoveTo(0.5, 115.0, 320.0)))));
+        image_cache.push(im_test);
+        // let tex = Rc::new(Texture::from_image(
+        //     &mut window.factory,
+        //     &im_test,
+        //     &TextureSettings::new()
+        // ).unwrap());
+        // let mut sprite_tex = Sprite::from_texture(tex.clone());
+        // sprite_tex.set_position(120.0, 320.0);
+        // let id_tex = scene.add_child(sprite_tex);
+
+        // scene.run(id_tex, &ai_behavior::Action(Ease(EaseFunction::CircularInOut, Box::new(MoveTo(0.5, 115.0, 320.0)))));
     }
     else {
         println!("Not found!")
