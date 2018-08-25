@@ -39,19 +39,14 @@ impl MenuAdapter<H5Group> for vgui::Menu {
 }
 
 fn register_menu<F, R>(scene: &mut sprite::Scene<piston_window::Texture<R>>, menu: &mut vgui::Menu, factory: &mut F)
-    where F: gfx::Factory<R>, R: gfx::Resources {
+    where F: gfx::Factory<R>, R: gfx::Resources
+{
     let mut s_menu = menu.make_sprite(factory);
     s_menu.set_position(-300.0, 15.0);
     menu.uuid_self = Some(scene.add_child(s_menu));
     scene.run(menu.uuid_self.unwrap(),
         &ai_behavior::Action(Ease(EaseFunction::ExponentialIn,
             Box::new(MoveTo(0.2, 15.0, 15.0)))));
-}
-
-fn sprite_from_image<F, R>(im: &TexImage, factory: &mut F) -> Sprite<Texture<R>>
-    where F: gfx::Factory<R>, R: gfx::Resources
-{
-    Sprite::from_texture(Rc::new(Texture::from_image(factory, im, &TextureSettings::new()).unwrap()))
 }
 
 fn main() {
@@ -176,7 +171,7 @@ fn main() {
                     uri.query = Query::One(page);
 
                     if let Some(im) = image_cache.request_one(&uri, target_resolution.clone().into()) {
-                        let mut sprite_tex = sprite_from_image(&im, &mut window.factory);
+                        let mut sprite_tex = vgui::sprite_from_image(&im, &mut window.factory);
                         let position = layout.get_coordinate(page);
                         sprite_tex.set_anchor(0.0, 0.0);
                         sprite_tex.set_position(position.0, position.1);

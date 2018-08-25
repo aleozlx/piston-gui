@@ -17,6 +17,7 @@ use imageproc::rect::Rect;
 use image::{Rgba, RgbaImage};
 
 pub type VGUIFont = std::rc::Rc<rusttype::Font<'static>>;
+pub type TexImage = RgbaImage;
 
 const ENTRY_HEIGHT: u32 = 32;
 const COLUMN_WIDTH: u32 = 315;
@@ -58,12 +59,7 @@ impl SpritePrototype for MenuEntry {
         if let Some(tag) = &self.tag {
             imageproc::drawing::draw_text_mut(&mut image, Rgba([0u8, 0u8, 255u8, 255u8]), WIDTH - 45, 0, scale_tag, self.font.borrow(), tag);
         }
-        let tex = Rc::new(Texture::from_image(
-            factory,
-            &image,
-            &TextureSettings::new()
-        ).unwrap());
-        let mut sprite = Sprite::from_texture(tex.clone());
+        let mut sprite = sprite_from_image(&image, factory);
         sprite.set_anchor(0.0, 0.0);
         sprite.set_position(0.0, (HEIGHT * (self.offset as u32)) as f64);
         return sprite;
@@ -122,12 +118,7 @@ impl SpritePrototype for Menu {
         const WIDTH: u32 = COLUMN_WIDTH;
         let mut image = RgbaImage::new(WIDTH, HEIGHT);
         imageproc::drawing::draw_filled_rect_mut(&mut image, Rect::at(0, 0).of_size(WIDTH, HEIGHT), Rgba([220u8, 220u8, 250u8, 220u8]));
-        let tex_cursor = Rc::new(Texture::from_image(
-            factory,
-            &image,
-            &TextureSettings::new()
-        ).unwrap());
-        let mut sprite_cursor = Sprite::from_texture(tex_cursor.clone());
+        let mut sprite_cursor = sprite_from_image(&image, factory);
         sprite_cursor.set_anchor(0.0, 0.0);
         self.uuid_cursor = Some(sprite.add_child(sprite_cursor));
 
@@ -184,12 +175,15 @@ impl StatusBar {
         where F: gfx::Factory<R>, R: gfx::Resources
     {
         self.label = new_label;
-        sprite.set_texture(self.redraw(factory));
+        sprite.set_texture(
+            Rc::new(Texture::from_image(
+            factory,
+            &self.draw(),
+            &TextureSettings::new()
+        ).unwrap()));
     }
 
-    fn redraw<F, R>(&mut self, factory: &mut F) -> Rc<Texture<R>>
-        where F: gfx::Factory<R>, R: gfx::Resources
-    {
+    fn draw(&mut self) -> TexImage {
         const HEIGHT: u32 = ENTRY_HEIGHT;
         const WIDTH: u32 = COLUMN_WIDTH * 3;
         let mut image = RgbaImage::new(WIDTH, HEIGHT);
@@ -198,11 +192,7 @@ impl StatusBar {
             imageproc::drawing::draw_hollow_rect_mut(&mut image, Rect::at(0, 0).of_size(WIDTH, HEIGHT), Rgba([0u8, 0u8, 255u8, 255u8]));
         }
         imageproc::drawing::draw_text_mut(&mut image, self.color, 0, 0, scale, self.font.borrow(), &self.label);
-        Rc::new(Texture::from_image(
-            factory,
-            &image,
-            &TextureSettings::new()
-        ).unwrap())
+        return image;
     }
 }
 
@@ -210,8 +200,18 @@ impl SpritePrototype for StatusBar {
     fn make_sprite<F, R>(&mut self, factory: &mut F) -> Sprite<Texture<R>>
         where F: gfx::Factory<R>, R: gfx::Resources
     {
-        let mut sprite = Sprite::from_texture(self.redraw(factory));
+        let mut sprite = Sprite::from_texture(Rc::new(Texture::from_image(
+            factory,
+            &self.draw(),
+            &TextureSettings::new()
+        ).unwrap()));
         sprite.set_anchor(0.0, 0.0);
         return sprite;
     }
+}
+
+pub fn sprite_from_image<F, R>(im: &TexImage, factory: &mut F) -> Sprite<Texture<R>>
+    where F: gfx::Factory<R>, R: gfx::Resources
+{
+    Sprite::from_texture(Rc::new(Texture::from_image(factory, im, &TextureSettings::new()).unwrap()))
 }
