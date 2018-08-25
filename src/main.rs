@@ -90,17 +90,21 @@ fn main() {
     };
 
     // Status
-    let mut status = StatusBar {
+    let mut status_bar = StatusBar {
         label: String::from("Initializing..."),
         font: font.clone(),
         color: image::Rgba([0u8, 0u8, 255u8, 255u8])
     };
-    let mut sprite_status = status.make_sprite(&mut window.factory);
+    let mut sprite_status = status_bar.make_sprite(&mut window.factory);
     sprite_status.set_position(15.0+315.0+15.0, 15.0);
     let id_status = scene.add_child(sprite_status);
+    macro_rules! status {
+        ( $label:expr ) => {
+            status_bar.update(String::from($label), &mut scene.child_mut(id_status).unwrap(), &mut window.factory)
+        };
+    }
 
-    status.update(String::from("Ready!"), &mut scene.child_mut(id_status).unwrap(), &mut window.factory);
-
+    status!("Ready!");
     while let Some(e) = window.next() {
         scene.event(&e);
 
@@ -138,9 +142,16 @@ fn main() {
                                     },
                                     H5Obj::Dataset(d) => {
                                         if let Some(resolution) = d.resolution_batch_images() {
-                                            // println!("resolution {}", &resolution);
+                                            let dpath = h5pointer.to_str().unwrap();
+                                            let ref shape = d.shape.iter().map(|x| x.to_string())
+                                                .collect::<Vec<String>>().join(", ");
+                                            let range = d.pagination_range();
+                                            let ref format = d.format();
+                                            status!(format!("Dataset {} ({}) {}x[{}] {}",
+                                                dpath, shape,
+                                                range.end, resolution, format));
                                             target_resolution = resolution;
-                                            uri.h5path = String::from(h5pointer.to_str().unwrap())
+                                            uri.h5path = String::from(dpath);
                                         }
                                         h5pointer.pop();
                                     }
@@ -171,6 +182,9 @@ fn main() {
                         sprite_tex.set_position(position.0, position.1);
                         
                         let _id_tex = scene.add_child(sprite_tex);
+                    }
+                    else {
+                        status!("Not available!");
                     }
                 }
                 _ => {}

@@ -124,7 +124,7 @@ impl H5Dataset {
                     match shape.iter().last().unwrap() {
                         1 => "Gray",
                         3 => "Color",
-                        4 => "RGBD",
+                        4 => "Alpha",
                         _ => "Hyper"
                     }
                 _ => ""
@@ -166,6 +166,10 @@ impl H5Dataset {
 
     pub fn format(&self) -> String {
         H5Dataset::shape_to_format(&self.shape)
+    }
+
+    pub fn pagination_range(&self) -> std::ops::Range<usize> {
+        0..self.shape[0]
     }
 }
 

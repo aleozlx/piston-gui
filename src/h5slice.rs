@@ -6,8 +6,6 @@ use std::io::prelude::*;
 use std::net::TcpStream;
 use flate2::read::GzDecoder;
 use std::string::ToString;
-use std::hash::Hash;
-use std::cmp::Eq;
 use std::collections::HashMap;
 
 pub type TexImage = image::RgbaImage;
