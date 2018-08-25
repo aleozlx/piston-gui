@@ -37,23 +37,6 @@ pub struct MenuEntry {
     offset: usize
 }
 
-pub struct Menu {
-    pub entries: Vec<MenuEntry>,
-    
-    cursor: usize,
-    uuid_cursor: Option<uuid::Uuid>,
-    pub uuid_self: Option<uuid::Uuid>
-}
-
-pub fn load_font(fname: &str) -> Result<VGUIFont, rusttype::Error> {
-    let assets = find_folder::Search::ParentsThenKids(2, 2).for_folder("assets").unwrap();
-    let ref fname_font = assets.join(fname);
-    let mut fin_font = File::open(fname_font).expect(&format!("Cannot find font: {}", fname));
-    let mut buffer = Vec::new();
-    fin_font.read_to_end(&mut buffer).expect("IO error while reading the font.");
-    Ok(Rc::new(rusttype::FontCollection::from_bytes(buffer).unwrap().into_font()?))
-}
-
 impl SpritePrototype for MenuEntry {
     fn make_sprite<F, R>(&mut self, factory: &mut F) -> Sprite<Texture<R>>
         where F: gfx::Factory<R>, R: gfx::Resources
@@ -80,6 +63,14 @@ impl SpritePrototype for MenuEntry {
         sprite.set_position(0.0, (HEIGHT * (self.offset as u32)) as f64);
         return sprite;
     }
+}
+
+pub struct Menu {
+    pub entries: Vec<MenuEntry>,
+    
+    cursor: usize,
+    uuid_cursor: Option<uuid::Uuid>,
+    pub uuid_self: Option<uuid::Uuid>
 }
 
 impl Menu {
@@ -140,4 +131,13 @@ impl SpritePrototype for Menu {
         }
         return sprite;
     }
+}
+
+pub fn load_font(fname: &str) -> Result<VGUIFont, rusttype::Error> {
+    let assets = find_folder::Search::ParentsThenKids(2, 2).for_folder("assets").unwrap();
+    let ref fname_font = assets.join(fname);
+    let mut fin_font = File::open(fname_font).expect(&format!("Cannot find font: {}", fname));
+    let mut buffer = Vec::new();
+    fin_font.read_to_end(&mut buffer).expect("IO error while reading the font.");
+    Ok(Rc::new(rusttype::FontCollection::from_bytes(buffer).unwrap().into_font()?))
 }

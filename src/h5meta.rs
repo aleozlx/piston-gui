@@ -12,16 +12,6 @@ pub struct H5Group {
     pub children: BTreeMap<String, H5Obj>
 }
 
-pub struct H5Dataset {
-    pub name: String,
-    pub shape: Vec<usize>
-}
-
-pub enum H5Obj{
-    Group(H5Group),
-    Dataset(H5Dataset)
-}
-
 impl H5Group {
     fn locate_mut<P: AsRef<Path>>(&mut self, path: P) -> &mut H5Group {
         let path = path.as_ref();
@@ -117,9 +107,9 @@ impl H5Group {
     }
 }
 
-pub struct Resolution {
-    pub width: usize,
-    pub height: usize
+pub struct H5Dataset {
+    pub name: String,
+    pub shape: Vec<usize>
 }
 
 impl H5Dataset {
@@ -179,16 +169,9 @@ impl H5Dataset {
     }
 }
 
-impl From<H5Group> for H5Obj {
-    fn from(val: H5Group) -> Self {
-        H5Obj::Group(val)
-    }
-}
-
-impl From<H5Dataset> for H5Obj {
-    fn from(val: H5Dataset) -> Self {
-        H5Obj::Dataset(val)
-    }
+pub enum H5Obj{
+    Group(H5Group),
+    Dataset(H5Dataset)
 }
 
 impl H5Obj {
@@ -243,6 +226,24 @@ impl H5Obj {
     //         H5Obj::Group(_) => None
     //     }
     // }
+}
+
+impl From<H5Group> for H5Obj {
+    fn from(val: H5Group) -> Self {
+        H5Obj::Group(val)
+    }
+}
+
+impl From<H5Dataset> for H5Obj {
+    fn from(val: H5Dataset) -> Self {
+        H5Obj::Dataset(val)
+    }
+}
+
+
+pub struct Resolution {
+    pub width: usize,
+    pub height: usize
 }
 
 impl std::fmt::Display for Resolution {

@@ -7,25 +7,10 @@ use std::net::TcpStream;
 use flate2::read::GzDecoder;
 use std::string::ToString;
 
+pub type TexImage = image::RgbaImage;
+
 pub enum Dtype {
     I4, I8, F4, F8
-}
-
-pub struct H5URI {
-    pub path: String,
-    pub h5path: String,
-    pub query: String,
-    pub dtype: Dtype
-}
-
-pub struct H5Cache {
-    buffer: Vec<TexImage>
-}
-
-enum CacheState<'a> {
-    Hit(&'a TexImage),
-    Miss,
-    NotExist
 }
 
 impl ToString for Dtype {
@@ -39,13 +24,28 @@ impl ToString for Dtype {
     }
 }
 
+pub struct H5URI {
+    pub path: String,
+    pub h5path: String,
+    pub query: String,
+    pub dtype: Dtype
+}
+
 impl ToString for H5URI {
     fn to_string(&self) -> String {
         [self.path.clone(), self.h5path.clone(), self.query.clone(), self.dtype.to_string()].join("\t")
     }
 }
 
-pub type TexImage = image::RgbaImage;
+pub struct H5Cache {
+    buffer: Vec<TexImage>
+}
+
+enum CacheState<'a> {
+    Hit(&'a TexImage),
+    Miss,
+    NotExist
+}
 
 pub fn get_one(uri: H5URI, resolution: (u32, u32)) -> Option<TexImage> {
     let mut stream = TcpStream::connect("localhost:8000").ok()?;
