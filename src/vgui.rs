@@ -38,7 +38,6 @@ pub trait Layout {
 
 pub trait Paginatable {
     fn page_capacity(&self) -> usize;
-    fn page_current(&self) -> usize;
 }
 
 pub struct MenuEntry {
@@ -146,8 +145,7 @@ pub fn load_font(fname: &str) -> Result<VGUIFont, rusttype::Error> {
 pub struct FlowLayout {
     pub view_size: (u32, u32),
     pub item_size: (u32, u32),
-    pub spacing: u32,
-    pub page_current: usize
+    pub spacing: u32
 }
 
 impl FlowLayout {
@@ -155,8 +153,7 @@ impl FlowLayout {
         FlowLayout {
             view_size: (1920, 1080),
             item_size: (100, 100),
-            spacing: 6,
-            page_current: 0
+            spacing: 6
         }
     }
 
@@ -190,10 +187,6 @@ impl Layout for FlowLayout {
 impl Paginatable for FlowLayout {
     fn page_capacity(&self) -> usize {
         self.get_items_per_row() * self.get_items_per_col()
-    }
-
-    fn page_current(&self) -> usize {
-        self.page_current
     }
 }
 
@@ -245,12 +238,17 @@ impl SpritePrototype for StatusBar {
 
 pub struct Pagnator {
     pub item_range: std::ops::Range<usize>,
-    pub page_size: usize
+    pub page_size: usize,
+    pub page_current: usize
 }
 
 impl Pagnator {
-    pub fn get_range(&self, page: usize) -> Option<std::ops::Range<usize>> {
-        let p = page * self.page_size;
+    pub fn new(o: &Paginatable, n_items: usize) -> Pagnator {
+        Pagnator { item_range: 0..n_items, page_size: o.page_capacity(), page_current: 0 }
+    }
+
+    pub fn get_range(&self, page_size: usize) -> Option<std::ops::Range<usize>> {
+        let p = self.page_current * self.page_size;
         if self.item_range.start <= p && p < self.item_range.end {
             let end = std::cmp::min(p+self.page_size, self.item_range.end);
             Some(p..end)

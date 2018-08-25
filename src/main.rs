@@ -15,8 +15,8 @@ mod h5slice;
 use std::rc::Rc;
 use std::path::PathBuf;
 use std::borrow::Borrow;
-use vgui::{SpritePrototype, MenuAdapter, VGUIFont, FlowLayout, StatusBar, Paginatable};
-use h5meta::{H5Obj, H5Group, Resolution};
+use vgui::{SpritePrototype, MenuAdapter, VGUIFont, FlowLayout, StatusBar, Pagnator};
+use h5meta::{H5Obj, H5Group, H5DatasetFormat, Resolution};
 use h5slice::{H5URI, Dtype, H5Cache, Query, TexImage};
 use piston_window::*;
 use sprite::*;
@@ -74,6 +74,7 @@ fn main() {
         dtype: Dtype::F4
     };
     let mut layout = FlowLayout::new();
+    let mut pages = Pagnator::new(&layout, 0);
 
     // Status
     let mut status_bar = StatusBar {
@@ -127,15 +128,12 @@ fn main() {
                                         register_menu(&mut scene, &mut menu, &mut window.factory);
                                     },
                                     H5Obj::Dataset(d) => {
-                                        if let Some(resolution) = d.resolution_batch_images() {
+                                        if let Some(resolution) = H5DatasetFormat::resolution_batch_images(&d.shape) {
                                             let dpath = h5pointer.to_str().unwrap();
-                                            let ref shape = d.shape.iter().map(|x| x.to_string())
-                                                .collect::<Vec<String>>().join(", ");
-                                            let range = d.pagination_range();
-                                            let ref format = d.format();
+                                            let fmt = H5DatasetFormat::batch(&d.shape);
                                             status!(format!("Dataset {} ({}) {}x[{}] {}",
-                                                dpath, shape,
-                                                range.end, resolution, format));
+                                                dpath, fmt.my_shape_to_string(),
+                                                fmt.pagination_range.end, resolution, fmt.format));
                                             layout.item_size = resolution.into();
                                             uri.h5path = String::from(dpath);
                                         }
@@ -158,8 +156,9 @@ fn main() {
 
                 },
                 Key::Period => {
-                    let cap = layout.page_capacity();
-                    status!(format!("capacity: {}", cap));
+                    // let cap = layout.page_capacity();
+                    // status!(format!("capacity: {}", cap));
+
                     // page += 1;
                     // uri.query = Query::One(page);
 

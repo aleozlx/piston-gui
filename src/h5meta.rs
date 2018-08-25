@@ -7,6 +7,8 @@ use std::io::BufReader;
 use std::io::prelude::*;
 use regex::Regex;
 
+type Shape = Vec<usize>;
+
 pub struct H5Group {
     pub name: String,
     pub children: BTreeMap<String, H5Obj>
@@ -78,7 +80,7 @@ impl H5Group {
                             let rule_dataset = Regex::new(r"^(?P<name>[^ ]+)\s+Dataset\s+\{(?P<shape>[0-9, ]*|SCALAR)\}$").unwrap();
                             let m = rule_dataset.captures(&line).expect("Malformed dataset metadata.");
                             // TODO could be scalar
-                            let shape: Vec<usize> =
+                            let shape: Shape =
                                 if &m["shape"] == "SCALAR" { Vec::new() }
                                 else {
                                     m["shape"].split(", ")
@@ -86,7 +88,7 @@ impl H5Group {
                                     .collect()
                                 };
                             if cfg!(debug_assertions) {
-                                let format = H5Dataset::shape_to_format(&shape);
+                                let format = H5DatasetFormat::shape_to_format(&shape);
                                 println!("D {} {}", full_name, format);
                             }
                             let full_name = PathBuf::from(full_name);
@@ -109,28 +111,11 @@ impl H5Group {
 
 pub struct H5Dataset {
     pub name: String,
-    pub shape: Vec<usize>
+    pub shape: Shape
 }
 
 impl H5Dataset {
-    fn shape_to_format(shape: &Vec<usize>) -> String {
-        String::from(
-            match shape.len() {
-                0 => "Param",
-                1 => "Scalar",
-                2 => "Vec",
-                3 => "Gray",
-                dims if dims >=4 =>
-                    match shape.iter().last().unwrap() {
-                        1 => "Gray",
-                        3 => "Color",
-                        4 => "Alpha",
-                        _ => "Hyper"
-                    }
-                _ => ""
-            })
-    }
-
+    #[deprecated]
     #[allow(dead_code)]
     pub fn resolution(&self) -> Option<Resolution> {
         match self.shape.len() {
@@ -144,32 +129,8 @@ impl H5Dataset {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn resolution_single_image(&self) -> Option<Resolution> {
-        match self.shape.len() {
-            // shape when 2<=dims<=3: height width channels?
-            dims if dims >= 2 && dims <=3 =>
-                Some(Resolution{ width: self.shape[1], height: self.shape[0] }),
-            _ => None
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn resolution_batch_images(&self) -> Option<Resolution> {
-        match self.shape.len() {
-            // shape when 3<=dims<=4: batch height width channels?
-            dims if dims >= 3 && dims <=4 =>
-                Some(Resolution{ width: self.shape[2], height: self.shape[1] }),
-            _ => None
-        }
-    }
-
     pub fn format(&self) -> String {
-        H5Dataset::shape_to_format(&self.shape)
-    }
-
-    pub fn pagination_range(&self) -> std::ops::Range<usize> {
-        0..self.shape[0]
+        H5DatasetFormat::shape_to_format(&self.shape)
     }
 }
 
@@ -259,6 +220,79 @@ impl Into<(u32, u32)> for Resolution {
 impl std::fmt::Display for Resolution {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}x{}", self.width, self.height)
+    }
+}
+
+#[allow(dead_code)]
+pub struct H5DatasetFormat<'a> {
+    shape: &'a Shape,
+    pub resolution: Resolution,
+    pub pagination_range: std::ops::Range<usize>,
+    pub format: String
+}
+
+#[allow(dead_code)]
+impl<'a> H5DatasetFormat<'a> {
+    pub fn resolution_single_image(shape: &Shape) -> Option<Resolution> {
+        match shape.len() {
+            // shape when 2<=dims<=3: height width channels?
+            dims if dims >= 2 && dims <=3 =>
+                Some(Resolution{ width: shape[1], height: shape[0] }),
+            _ => None
+        }
+    }
+
+    pub fn resolution_batch_images(shape: &Shape) -> Option<Resolution> {
+        match shape.len() {
+            // shape when 3<=dims<=4: batch height width channels?
+            dims if dims >= 3 && dims <=4 =>
+                Some(Resolution{ width: shape[2], height: shape[1] }),
+            _ => None
+        }
+    }
+
+    pub fn single(shape: &'a Shape) -> H5DatasetFormat<'a> {
+        H5DatasetFormat {
+            shape: shape,
+            pagination_range: 0..1,
+            format: H5DatasetFormat::shape_to_format(shape),
+            resolution: H5DatasetFormat::resolution_single_image(shape).unwrap()
+        }
+    }
+
+    pub fn batch(shape: &'a Shape) -> H5DatasetFormat<'a> {
+        H5DatasetFormat {
+            shape: shape,
+            pagination_range: 0..shape[0],
+            format: H5DatasetFormat::shape_to_format(shape),
+            resolution: H5DatasetFormat::resolution_batch_images(shape).unwrap()
+        }
+    }
+
+    pub fn shape_to_format(shape: &Shape) -> String {
+        String::from(
+            match shape.len() {
+                0 => "Param",
+                1 => "Scalar",
+                2 => "Vec",
+                3 => "Gray",
+                dims if dims >=4 =>
+                    match shape.iter().last().unwrap() {
+                        1 => "Gray",
+                        3 => "Color",
+                        4 => "Alpha",
+                        _ => "Hyper"
+                    }
+                _ => ""
+            })
+    }
+
+    pub fn shape_to_string(shape: &Shape) -> String {
+        shape.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(", ")
+    }
+
+    pub fn my_shape_to_string(&self) -> String {
+        H5DatasetFormat::shape_to_string(self.shape)
     }
 }
 
