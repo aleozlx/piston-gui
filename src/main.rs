@@ -17,7 +17,7 @@ use std::path::PathBuf;
 use vgui::SpritePrototype;
 use vgui::MenuAdapter;
 use vgui::VGUIFont;
-use h5meta::{H5Obj, H5Group};
+use h5meta::{H5Obj, H5Group, Resolution};
 use h5slice::{H5URI, Dtype, H5Cache, Query, TexImage};
 use piston_window::*;
 use sprite::*;
@@ -73,6 +73,16 @@ fn main() {
     register_menu(&mut scene, &mut menu, &mut window.factory);
 
     let mut image_cache = H5Cache::new();
+    let mut uri = H5URI {
+        path: String::from("/home/alex/datasets/ucm-sample.h5"),
+        h5path: String::from(""),
+        query: Query::One(0),
+        dtype: Dtype::F4
+    };
+    let mut target_resolution = Resolution {
+        width: 0,
+        height: 0
+    };
     
     while let Some(e) = window.next() {
         scene.event(&e);
@@ -111,14 +121,11 @@ fn main() {
                                     },
                                     H5Obj::Dataset(d) => {
                                         if let Some(resolution) = d.resolution_batch_images() {
-                                            println!("resolution {}", &resolution);
+                                            // println!("resolution {}", &resolution);
+                                            target_resolution = resolution;
+                                            uri.h5path = String::from(h5pointer.to_str().unwrap());
 
-                                            if let Some(im) = image_cache.request_one(&H5URI{
-                                                path: String::from("/home/alex/datasets/ucm-sample.h5"),
-                                                h5path: String::from(h5pointer.to_str().unwrap()),
-                                                query: Query::One(14),
-                                                dtype: Dtype::F4
-                                            }, &resolution.into()) {
+                                            if let Some(im) = image_cache.request_one(&uri, target_resolution.clone().into()) {
                                                 let mut sprite_tex = sprite_from_image(&im, &mut window.factory);
                                                 sprite_tex.set_position(120.0, 320.0);
                                                 let _id_tex = scene.add_child(sprite_tex);

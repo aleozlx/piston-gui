@@ -68,7 +68,7 @@ impl H5Cache {
         H5Cache { buffer: HashMap::with_capacity(60) }
     }
 
-    pub fn request_one(&mut self, uri: &H5URI, resolution: &(u32, u32)) -> Option<&'_ mut TexImage> {
+    pub fn request_one(&mut self, uri: &H5URI, resolution: (u32, u32)) -> Option<&'_ mut TexImage> {
         if self.buffer.contains_key(uri) {
             Some(self.buffer.get_mut(uri).unwrap())
         }
@@ -77,8 +77,8 @@ impl H5Cache {
         }
     }
 
-    fn fetch_one(&mut self, uri: &H5URI, resolution: &(u32, u32)) -> Option<&'_ mut TexImage> {
-        fn __fetch_one(uri: &H5URI, resolution: &(u32, u32)) -> Option<TexImage> {
+    fn fetch_one(&mut self, uri: &H5URI, resolution: (u32, u32)) -> Option<&'_ mut TexImage> {
+        fn __fetch_one(uri: &H5URI, resolution: (u32, u32)) -> Option<TexImage> {
             let mut stream = TcpStream::connect("localhost:8000").ok()?;
             let mut buffer_in = Vec::with_capacity(8<<10);
             let mut buffer_out = Vec::with_capacity(4<<20);

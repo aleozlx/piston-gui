@@ -240,7 +240,7 @@ impl From<H5Dataset> for H5Obj {
     }
 }
 
-
+#[derive(Clone, Copy)]
 pub struct Resolution {
     pub width: usize,
     pub height: usize
