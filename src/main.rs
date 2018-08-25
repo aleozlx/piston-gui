@@ -15,7 +15,7 @@ mod h5slice;
 use std::rc::Rc;
 use std::path::PathBuf;
 use std::borrow::Borrow;
-use vgui::{SpritePrototype, MenuAdapter, VGUIFont, FlowLayout, StatusBar};
+use vgui::{SpritePrototype, MenuAdapter, VGUIFont, FlowLayout, StatusBar, Paginatable};
 use h5meta::{H5Obj, H5Group, Resolution};
 use h5slice::{H5URI, Dtype, H5Cache, Query, TexImage};
 use piston_window::*;
@@ -73,16 +73,7 @@ fn main() {
         query: Query::One(0),
         dtype: Dtype::F4
     };
-    let mut target_resolution = Resolution {
-        width: 0,
-        height: 0
-    };
-    let mut page = 0usize;
-    let layout = FlowLayout {
-        view_size: (1920, 1080),
-        item_size: (150, 150),
-        spacing: 6
-    };
+    let mut layout = FlowLayout::new();
 
     // Status
     let mut status_bar = StatusBar {
@@ -145,7 +136,7 @@ fn main() {
                                             status!(format!("Dataset {} ({}) {}x[{}] {}",
                                                 dpath, shape,
                                                 range.end, resolution, format));
-                                            target_resolution = resolution;
+                                            layout.item_size = resolution.into();
                                             uri.h5path = String::from(dpath);
                                         }
                                         h5pointer.pop();
@@ -167,20 +158,22 @@ fn main() {
 
                 },
                 Key::Period => {
-                    page += 1;
-                    uri.query = Query::One(page);
+                    let cap = layout.page_capacity();
+                    status!(format!("capacity: {}", cap));
+                    // page += 1;
+                    // uri.query = Query::One(page);
 
-                    if let Some(im) = image_cache.request_one(&uri, target_resolution.clone().into()) {
-                        let mut sprite_tex = vgui::sprite_from_image(&im, &mut window.factory);
-                        let position = layout.get_coordinate(page);
-                        sprite_tex.set_anchor(0.0, 0.0);
-                        sprite_tex.set_position(position.0, position.1);
+                    // if let Some(im) = image_cache.request_one(&uri, target_resolution.clone().into()) {
+                    //     let mut sprite_tex = vgui::sprite_from_image(&im, &mut window.factory);
+                    //     let position = layout.get_coordinate(page);
+                    //     sprite_tex.set_anchor(0.0, 0.0);
+                    //     sprite_tex.set_position(position.0, position.1);
                         
-                        let _id_tex = scene.add_child(sprite_tex);
-                    }
-                    else {
-                        status!("Not available!");
-                    }
+                    //     let _id_tex = scene.add_child(sprite_tex);
+                    // }
+                    // else {
+                    //     status!("Not available!");
+                    // }
                 }
                 _ => {}
             }

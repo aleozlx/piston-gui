@@ -36,6 +36,11 @@ pub trait Layout {
     fn item_size(&self) -> (u32, u32);
 }
 
+pub trait Paginatable {
+    fn page_capacity(&self) -> usize;
+    fn page_current(&self) -> usize;
+}
+
 pub struct MenuEntry {
     pub label: String,
     pub font: VGUIFont,
@@ -141,12 +146,30 @@ pub fn load_font(fname: &str) -> Result<VGUIFont, rusttype::Error> {
 pub struct FlowLayout {
     pub view_size: (u32, u32),
     pub item_size: (u32, u32),
-    pub spacing: u32
+    pub spacing: u32,
+    pub page_current: usize
 }
 
 impl FlowLayout {
+    pub fn new() -> FlowLayout {
+        FlowLayout {
+            view_size: (1920, 1080),
+            item_size: (100, 100),
+            spacing: 6,
+            page_current: 0
+        }
+    }
+
+    pub fn get_items_per_row(&self) -> usize {
+        (self.view_size.0 / (self.item_size.0 + self.spacing)) as usize
+    }
+
+    pub fn get_items_per_col(&self) -> usize {
+        (self.view_size.1 / (self.item_size.1 + self.spacing)) as usize
+    }
+
     pub fn get_coordinate(&self, idx: usize) -> (f64, f64) {
-        let items_per_row = (self.view_size.0 / (self.item_size.0 + self.spacing)) as usize;
+        let items_per_row = self.get_items_per_row();
         let row = idx / items_per_row;
         let col = idx % items_per_row;
         (col as f64 * (self.item_size.1 + self.spacing) as f64,
@@ -161,6 +184,16 @@ impl Layout for FlowLayout {
 
     fn item_size(&self) -> (u32, u32) {
         self.item_size
+    }
+}
+
+impl Paginatable for FlowLayout {
+    fn page_capacity(&self) -> usize {
+        self.get_items_per_row() * self.get_items_per_col()
+    }
+
+    fn page_current(&self) -> usize {
+        self.page_current
     }
 }
 
@@ -207,6 +240,22 @@ impl SpritePrototype for StatusBar {
         ).unwrap()));
         sprite.set_anchor(0.0, 0.0);
         return sprite;
+    }
+}
+
+pub struct Pagnator {
+    pub item_range: std::ops::Range<usize>,
+    pub page_size: usize
+}
+
+impl Pagnator {
+    pub fn get_range(&self, page: usize) -> Option<std::ops::Range<usize>> {
+        let p = page * self.page_size;
+        if self.item_range.start <= p && p < self.item_range.end {
+            let end = std::cmp::min(p+self.page_size, self.item_range.end);
+            Some(p..end)
+        }
+        else { None }
     }
 }
 
