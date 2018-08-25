@@ -179,8 +179,15 @@ pub struct StatusBar {
     pub color: Rgba<u8>
 }
 
-impl SpritePrototype for StatusBar {
-fn make_sprite<F, R>(&mut self, factory: &mut F) -> Sprite<Texture<R>>
+impl StatusBar {
+    pub fn update<F, R>(&mut self, new_label: String, sprite: &mut Sprite<Texture<R>>, factory: &mut F)
+        where F: gfx::Factory<R>, R: gfx::Resources
+    {
+        self.label = new_label;
+        sprite.set_texture(self.redraw(factory));
+    }
+
+    fn redraw<F, R>(&mut self, factory: &mut F) -> Rc<Texture<R>>
         where F: gfx::Factory<R>, R: gfx::Resources
     {
         const HEIGHT: u32 = ENTRY_HEIGHT;
@@ -191,12 +198,19 @@ fn make_sprite<F, R>(&mut self, factory: &mut F) -> Sprite<Texture<R>>
             imageproc::drawing::draw_hollow_rect_mut(&mut image, Rect::at(0, 0).of_size(WIDTH, HEIGHT), Rgba([0u8, 0u8, 255u8, 255u8]));
         }
         imageproc::drawing::draw_text_mut(&mut image, self.color, 0, 0, scale, self.font.borrow(), &self.label);
-        let tex = Rc::new(Texture::from_image(
+        Rc::new(Texture::from_image(
             factory,
             &image,
             &TextureSettings::new()
-        ).unwrap());
-        let mut sprite = Sprite::from_texture(tex.clone());
+        ).unwrap())
+    }
+}
+
+impl SpritePrototype for StatusBar {
+    fn make_sprite<F, R>(&mut self, factory: &mut F) -> Sprite<Texture<R>>
+        where F: gfx::Factory<R>, R: gfx::Resources
+    {
+        let mut sprite = Sprite::from_texture(self.redraw(factory));
         sprite.set_anchor(0.0, 0.0);
         return sprite;
     }

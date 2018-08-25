@@ -91,13 +91,15 @@ fn main() {
 
     // Status
     let mut status = StatusBar {
-        label: String::from("Ready"),
+        label: String::from("Initializing..."),
         font: font.clone(),
         color: image::Rgba([0u8, 0u8, 255u8, 255u8])
     };
     let mut sprite_status = status.make_sprite(&mut window.factory);
     sprite_status.set_position(15.0+315.0+15.0, 15.0);
-    scene.add_child(sprite_status);
+    let id_status = scene.add_child(sprite_status);
+
+    status.update(String::from("Ready!"), &mut scene.child_mut(id_status).unwrap(), &mut window.factory);
 
     while let Some(e) = window.next() {
         scene.event(&e);
@@ -105,11 +107,6 @@ fn main() {
         window.draw_2d(&e, |c, g| {
             clear([1.0, 1.0, 1.0, 1.0], g);
             scene.draw(c.transform, g);
-            
-            // let transform = c.transform.trans(320.0, 100.0).scale(0.8, 0.8);
-            // text::Text::new_color([0.0, 0.0, 1.0, 1.0], 32).draw(
-            //     &status, &mut glyphs, &c.draw_state, transform, g
-            // ).unwrap();
         });
 
         if let Some(Button::Keyboard(key)) = e.press_args() {
