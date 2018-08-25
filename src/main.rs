@@ -14,7 +14,8 @@ mod h5meta;
 mod h5slice;
 use std::rc::Rc;
 use std::path::PathBuf;
-use vgui::{SpritePrototype, MenuAdapter, VGUIFont, FlowLayout};
+use std::borrow::Borrow;
+use vgui::{SpritePrototype, MenuAdapter, VGUIFont, FlowLayout, StatusBar};
 use h5meta::{H5Obj, H5Group, Resolution};
 use h5slice::{H5URI, Dtype, H5Cache, Query, TexImage};
 use piston_window::*;
@@ -87,13 +88,28 @@ fn main() {
         item_size: (150, 150),
         spacing: 6
     };
-    
+
+    // Status
+    let mut status = StatusBar {
+        label: String::from("Ready"),
+        font: font.clone(),
+        color: image::Rgba([0u8, 0u8, 255u8, 255u8])
+    };
+    let mut sprite_status = status.make_sprite(&mut window.factory);
+    sprite_status.set_position(15.0+315.0+15.0, 15.0);
+    scene.add_child(sprite_status);
+
     while let Some(e) = window.next() {
         scene.event(&e);
 
         window.draw_2d(&e, |c, g| {
             clear([1.0, 1.0, 1.0, 1.0], g);
             scene.draw(c.transform, g);
+            
+            // let transform = c.transform.trans(320.0, 100.0).scale(0.8, 0.8);
+            // text::Text::new_color([0.0, 0.0, 1.0, 1.0], 32).draw(
+            //     &status, &mut glyphs, &c.draw_state, transform, g
+            // ).unwrap();
         });
 
         if let Some(Button::Keyboard(key)) = e.press_args() {

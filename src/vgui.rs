@@ -172,3 +172,32 @@ impl Layout for FlowLayout {
         self.item_size
     }
 }
+
+pub struct StatusBar {
+    pub label: String,
+    pub font: VGUIFont,
+    pub color: Rgba<u8>
+}
+
+impl SpritePrototype for StatusBar {
+fn make_sprite<F, R>(&mut self, factory: &mut F) -> Sprite<Texture<R>>
+        where F: gfx::Factory<R>, R: gfx::Resources
+    {
+        const HEIGHT: u32 = ENTRY_HEIGHT;
+        const WIDTH: u32 = COLUMN_WIDTH * 3;
+        let mut image = RgbaImage::new(WIDTH, HEIGHT);
+        let scale = rusttype::Scale { x: HEIGHT as f32, y: HEIGHT as f32 };
+        if cfg!(debug_assertions) {
+            imageproc::drawing::draw_hollow_rect_mut(&mut image, Rect::at(0, 0).of_size(WIDTH, HEIGHT), Rgba([0u8, 0u8, 255u8, 255u8]));
+        }
+        imageproc::drawing::draw_text_mut(&mut image, self.color, 0, 0, scale, self.font.borrow(), &self.label);
+        let tex = Rc::new(Texture::from_image(
+            factory,
+            &image,
+            &TextureSettings::new()
+        ).unwrap());
+        let mut sprite = Sprite::from_texture(tex.clone());
+        sprite.set_anchor(0.0, 0.0);
+        return sprite;
+    }
+}
