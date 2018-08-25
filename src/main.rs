@@ -137,6 +137,10 @@ fn main() {
                                             layout.item_size = resolution.into();
                                             uri.h5path = String::from(dpath);
                                         }
+                                        else {
+                                            status!(format!("Unable to visualize dataset with shape: ({})",
+                                                H5DatasetFormat::shape_to_string(&d.shape)));
+                                        }
                                         h5pointer.pop();
                                     }
                                 }
