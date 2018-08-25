@@ -1,3 +1,5 @@
+#![feature(nll)]
+
 extern crate image;
 extern crate flate2;
 
@@ -6,9 +8,13 @@ use std::io::prelude::*;
 use std::net::TcpStream;
 use flate2::read::GzDecoder;
 use std::string::ToString;
+use std::hash::Hash;
+use std::cmp::Eq;
+use std::collections::HashMap;
 
 pub type TexImage = image::RgbaImage;
 
+#[derive(PartialEq, Eq, Hash, Clone)]
 pub enum Dtype {
     I4, I8, F4, F8
 }
@@ -24,6 +30,7 @@ impl ToString for Dtype {
     }
 }
 
+#[derive(PartialEq, Eq, Hash, Clone)]
 pub struct H5URI {
     pub path: String,
     pub h5path: String,
@@ -38,29 +45,84 @@ impl ToString for H5URI {
 }
 
 pub struct H5Cache {
-    buffer: Vec<TexImage>
+    buffer: HashMap<H5URI, TexImage>
 }
 
-enum CacheState<'a> {
-    Hit(&'a TexImage),
+impl H5Cache {
+    pub fn new() -> H5Cache {
+        H5Cache { buffer: HashMap::with_capacity(60) }
+    }
+
+    pub fn request_one<'ret>(&mut self, uri: &H5URI, resolution: &(u32, u32)) -> Option<&'ret mut TexImage> {
+        {
+            if let CacheState::Hit(im) = self.check(uri) {
+                return Some(im);
+            }
+        }
+        
+        {
+            if let CacheState::Hit(im) = self.fetch_one(uri, resolution) {
+                return Some(im)
+            }
+        }
+
+        return None
+    }
+
+    fn check(&mut self, uri: &H5URI) -> CacheState {
+        if let Some(im) = self.buffer.get_mut(uri) { CacheState::Hit(im) }
+        else { CacheState::Miss }
+    }
+
+    fn fetch_one(&mut self, uri: &H5URI, resolution: &(u32, u32)) -> CacheState {
+        // TODO implement std::ops::Try for CacheState when stable
+        fn __fetch_one(uri: &H5URI, resolution: &(u32, u32)) -> Option<TexImage> {
+            let mut stream = TcpStream::connect("localhost:8000").ok()?;
+            let mut buffer_in = Vec::with_capacity(8<<10);
+            let mut buffer_out = Vec::with_capacity(4<<20);
+            let _ = stream.write(uri.to_string().as_bytes());
+            let n = stream.read_to_end(&mut buffer_in).ok()?;
+            // TODO use logging instead
+            if cfg!(debug_assertions) { println!("Read {} bytes from network.", n); }
+            let mut decoder = GzDecoder::new(&buffer_in[..]);
+            let n = decoder.read_to_end(&mut buffer_out).ok()?;
+            if cfg!(debug_assertions) { println!("Decompressed into {} bytes.", n); }
+            let im_rgb = image::ImageBuffer::from_raw(resolution.0, resolution.1,
+                unsafe { slice::from_raw_parts(buffer_out.as_ptr() as *const f32, n/mem::size_of::<f32>()) }
+                    .into_iter().map(|x| {(x+100.0) as u8}).collect())?;
+            // A copy is done by format conversion, so lifetime is correct.
+            Some(image::DynamicImage::ImageRgb8(im_rgb).to_rgba())
+        }
+        
+        if let Some(im) = __fetch_one(uri, resolution) {
+            self.buffer.insert(uri.clone(), im);
+            CacheState::Hit(self.buffer.get_mut(uri).unwrap())
+        }
+        else { CacheState::NotAvailable }
+    }
+        
+}
+
+pub enum CacheState<'a> {
+    Hit(&'a mut TexImage),
     Miss,
-    NotExist
+    NotAvailable
 }
 
-pub fn get_one(uri: H5URI, resolution: (u32, u32)) -> Option<TexImage> {
-    let mut stream = TcpStream::connect("localhost:8000").ok()?;
-    let mut buffer_in = Vec::with_capacity(8<<10);
-    let mut buffer_out = Vec::with_capacity(4<<20);
-    let _ = stream.write(uri.to_string().as_bytes());
-    let n = stream.read_to_end(&mut buffer_in).ok()?;
-    // TODO use logging instead
-    if cfg!(debug_assertions) { println!("Read {} bytes from network.", n); }
-    let mut decoder = GzDecoder::new(&buffer_in[..]);
-    let n = decoder.read_to_end(&mut buffer_out).ok()?;
-    if cfg!(debug_assertions) { println!("Decompressed into {} bytes.", n); }
-    let im_rgb = image::ImageBuffer::from_raw(resolution.0, resolution.1,
-        unsafe { slice::from_raw_parts(buffer_out.as_ptr() as *const f32, n/mem::size_of::<f32>()) }
-            .into_iter().map(|x| {(x+100.0) as u8}).collect())?;
-    // A copy is done by format conversion, so lifetime is correct.
-    Some(image::DynamicImage::ImageRgb8(im_rgb).to_rgba())
-}
+// pub fn get_one(uri: H5URI, resolution: (u32, u32)) -> Option<TexImage> {
+//     let mut stream = TcpStream::connect("localhost:8000").ok()?;
+//     let mut buffer_in = Vec::with_capacity(8<<10);
+//     let mut buffer_out = Vec::with_capacity(4<<20);
+//     let _ = stream.write(uri.to_string().as_bytes());
+//     let n = stream.read_to_end(&mut buffer_in).ok()?;
+//     // TODO use logging instead
+//     if cfg!(debug_assertions) { println!("Read {} bytes from network.", n); }
+//     let mut decoder = GzDecoder::new(&buffer_in[..]);
+//     let n = decoder.read_to_end(&mut buffer_out).ok()?;
+//     if cfg!(debug_assertions) { println!("Decompressed into {} bytes.", n); }
+//     let im_rgb = image::ImageBuffer::from_raw(resolution.0, resolution.1,
+//         unsafe { slice::from_raw_parts(buffer_out.as_ptr() as *const f32, n/mem::size_of::<f32>()) }
+//             .into_iter().map(|x| {(x+100.0) as u8}).collect())?;
+//     // A copy is done by format conversion, so lifetime is correct.
+//     Some(image::DynamicImage::ImageRgb8(im_rgb).to_rgba())
+// }
