@@ -14,9 +14,7 @@ mod h5meta;
 mod h5slice;
 use std::rc::Rc;
 use std::path::PathBuf;
-use vgui::SpritePrototype;
-use vgui::MenuAdapter;
-use vgui::VGUIFont;
+use vgui::{SpritePrototype, MenuAdapter, VGUIFont, FlowLayout};
 use h5meta::{H5Obj, H5Group, Resolution};
 use h5slice::{H5URI, Dtype, H5Cache, Query, TexImage};
 use piston_window::*;
@@ -61,7 +59,7 @@ fn main() {
     let mut window: PistonWindow =
         WindowSettings::new("piston: sprite", (width, height))
         .exit_on_esc(true)
-        // .fullscreen(true)
+        .fullscreen(true)
         .opengl(opengl)
         .build()
         .unwrap();
@@ -84,6 +82,11 @@ fn main() {
         height: 0
     };
     let mut page = 0usize;
+    let layout = FlowLayout {
+        view_size: (1920, 1080),
+        item_size: (150, 150),
+        spacing: 6
+    };
     
     while let Some(e) = window.next() {
         scene.event(&e);
@@ -124,9 +127,7 @@ fn main() {
                                         if let Some(resolution) = d.resolution_batch_images() {
                                             // println!("resolution {}", &resolution);
                                             target_resolution = resolution;
-                                            uri.h5path = String::from(h5pointer.to_str().unwrap());
-
-                                            
+                                            uri.h5path = String::from(h5pointer.to_str().unwrap())
                                         }
                                         h5pointer.pop();
                                     }
@@ -152,7 +153,8 @@ fn main() {
 
                     if let Some(im) = image_cache.request_one(&uri, target_resolution.clone().into()) {
                         let mut sprite_tex = sprite_from_image(&im, &mut window.factory);
-                        sprite_tex.set_position(120.0 + 200.0*(page as f64), 320.0);
+                        let position = layout.get_coordinate(page);
+                        sprite_tex.set_position(position.0, position.1);
                         let _id_tex = scene.add_child(sprite_tex);
                     }
                 }

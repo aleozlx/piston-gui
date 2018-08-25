@@ -30,6 +30,11 @@ pub trait MenuAdapter<T> {
     fn adapt(group: &T, font: VGUIFont) -> Menu;
 }
 
+pub trait Layout {
+    fn view_size(&self) -> (u32, u32);
+    fn item_size(&self) -> (u32, u32);
+}
+
 pub struct MenuEntry {
     pub label: String,
     pub font: VGUIFont,
@@ -140,4 +145,30 @@ pub fn load_font(fname: &str) -> Result<VGUIFont, rusttype::Error> {
     let mut buffer = Vec::new();
     fin_font.read_to_end(&mut buffer).expect("IO error while reading the font.");
     Ok(Rc::new(rusttype::FontCollection::from_bytes(buffer).unwrap().into_font()?))
+}
+
+pub struct FlowLayout {
+    pub view_size: (u32, u32),
+    pub item_size: (u32, u32),
+    pub spacing: u32
+}
+
+impl FlowLayout {
+    pub fn get_coordinate(&self, idx: usize) -> (f64, f64) {
+        let items_per_row = (self.view_size.0 / (self.item_size.0 + self.spacing)) as usize;
+        let row = idx / items_per_row;
+        let col = idx % items_per_row;
+        (col as f64 * (self.item_size.1 + self.spacing) as f64,
+         row as f64 * (self.item_size.0 + self.spacing) as f64)
+    }
+}
+
+impl Layout for FlowLayout {
+    fn view_size(&self) -> (u32, u32) {
+        self.view_size
+    }
+
+    fn item_size(&self) -> (u32, u32) {
+        self.item_size
+    }
 }
