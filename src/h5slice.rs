@@ -1,5 +1,3 @@
-#![feature(nll)]
-
 extern crate image;
 extern crate flate2;
 
@@ -53,29 +51,16 @@ impl H5Cache {
         H5Cache { buffer: HashMap::with_capacity(60) }
     }
 
-    pub fn request_one<'ret>(&mut self, uri: &H5URI, resolution: &(u32, u32)) -> Option<&'ret mut TexImage> {
-        {
-            if let CacheState::Hit(im) = self.check(uri) {
-                return Some(im);
-            }
+    pub fn request_one(&mut self, uri: &H5URI, resolution: &(u32, u32)) -> Option<&'_ mut TexImage> {
+        if self.buffer.contains_key(uri) {
+            Some(self.buffer.get_mut(uri).unwrap())
         }
-        
-        {
-            if let CacheState::Hit(im) = self.fetch_one(uri, resolution) {
-                return Some(im)
-            }
+        else {
+            self.fetch_one(uri, resolution)
         }
-
-        return None
     }
 
-    fn check(&mut self, uri: &H5URI) -> CacheState {
-        if let Some(im) = self.buffer.get_mut(uri) { CacheState::Hit(im) }
-        else { CacheState::Miss }
-    }
-
-    fn fetch_one(&mut self, uri: &H5URI, resolution: &(u32, u32)) -> CacheState {
-        // TODO implement std::ops::Try for CacheState when stable
+    fn fetch_one(&mut self, uri: &H5URI, resolution: &(u32, u32)) -> Option<&'_ mut TexImage> {
         fn __fetch_one(uri: &H5URI, resolution: &(u32, u32)) -> Option<TexImage> {
             let mut stream = TcpStream::connect("localhost:8000").ok()?;
             let mut buffer_in = Vec::with_capacity(8<<10);
@@ -94,19 +79,9 @@ impl H5Cache {
             Some(image::DynamicImage::ImageRgb8(im_rgb).to_rgba())
         }
         
-        if let Some(im) = __fetch_one(uri, resolution) {
-            self.buffer.insert(uri.clone(), im);
-            CacheState::Hit(self.buffer.get_mut(uri).unwrap())
-        }
-        else { CacheState::NotAvailable }
+        self.buffer.insert(uri.clone(), __fetch_one(uri, resolution)?);
+        Some(self.buffer.get_mut(uri).unwrap())
     }
-        
-}
-
-pub enum CacheState<'a> {
-    Hit(&'a mut TexImage),
-    Miss,
-    NotAvailable
 }
 
 // pub fn get_one(uri: H5URI, resolution: (u32, u32)) -> Option<TexImage> {

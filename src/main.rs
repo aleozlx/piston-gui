@@ -1,4 +1,3 @@
-#![feature(nll)]
 extern crate piston_window;
 extern crate ai_behavior;
 extern crate sprite;
