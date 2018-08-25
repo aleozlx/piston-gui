@@ -18,7 +18,7 @@ use vgui::SpritePrototype;
 use vgui::MenuAdapter;
 use vgui::VGUIFont;
 use h5meta::{H5Obj, H5Group};
-use h5slice::{H5URI, Dtype, H5Cache, Query};
+use h5slice::{H5URI, Dtype, H5Cache, Query, TexImage};
 use piston_window::*;
 use sprite::*;
 
@@ -49,6 +49,12 @@ fn register_menu<F, R>(scene: &mut sprite::Scene<piston_window::Texture<R>>, men
             Box::new(MoveTo(0.2, 15.0, 15.0)))));
 }
 
+fn sprite_from_image<F, R>(im: &TexImage, factory: &mut F) -> Sprite<Texture<R>>
+    where F: gfx::Factory<R>, R: gfx::Resources
+{
+    Sprite::from_texture(Rc::new(Texture::from_image(factory, im, &TextureSettings::new()).unwrap()))
+}
+
 fn main() {
     let (width, height) = (800, 600);
     let opengl = OpenGL::V3_2;
@@ -68,29 +74,6 @@ fn main() {
 
     let mut image_cache = H5Cache::new();
     
-    // if let Some(im_test) = h5slice::get_one(H5URI{
-    //     path: String::from("/home/alex/datasets/ucm-sample.h5"),
-    //     h5path: String::from("/source/images"),
-    //     query: String::from("13"),
-    //     dtype: Dtype::F4
-    // }, (224,224)) {
-        // let tex = Rc::new(Texture::from_image(
-        //     &mut window.factory,
-        //     &im_test,
-        //     &TextureSettings::new()
-        // ).unwrap());
-        // let mut sprite_tex = Sprite::from_texture(tex.clone());
-        // sprite_tex.set_position(120.0, 320.0);
-        // let id_tex = scene.add_child(sprite_tex);
-
-        // scene.run(id_tex, &ai_behavior::Action(Ease(EaseFunction::CircularInOut, Box::new(MoveTo(0.5, 115.0, 320.0)))));
-    // }
-    // else {
-    //     println!("Not found!")
-    // }
-    
-    
-
     while let Some(e) = window.next() {
         scene.event(&e);
 
@@ -136,12 +119,7 @@ fn main() {
                                                 query: Query::One(14),
                                                 dtype: Dtype::F4
                                             }, &resolution.into()) {
-                                                let tex = Rc::new(Texture::from_image(
-                                                    &mut window.factory,
-                                                    &im,
-                                                    &TextureSettings::new()
-                                                ).unwrap());
-                                                let mut sprite_tex = Sprite::from_texture(tex.clone());
+                                                let mut sprite_tex = sprite_from_image(&im, &mut window.factory);
                                                 sprite_tex.set_position(120.0, 320.0);
                                                 let _id_tex = scene.add_child(sprite_tex);
                                             }
