@@ -154,7 +154,9 @@ fn main() {
                     if let Some(im) = image_cache.request_one(&uri, target_resolution.clone().into()) {
                         let mut sprite_tex = sprite_from_image(&im, &mut window.factory);
                         let position = layout.get_coordinate(page);
+                        sprite_tex.set_anchor(0.0, 0.0);
                         sprite_tex.set_position(position.0, position.1);
+                        
                         let _id_tex = scene.add_child(sprite_tex);
                     }
                 }
