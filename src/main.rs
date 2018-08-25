@@ -129,28 +129,23 @@ fn main() {
                                     H5Obj::Dataset(d) => {
                                         if let Some(resolution) = d.resolution_batch_images() {
                                             println!("resolution {}", &resolution);
+
+                                            if let Some(im) = image_cache.request_one(&H5URI{
+                                                path: String::from("/home/alex/datasets/ucm-sample.h5"),
+                                                h5path: String::from(h5pointer.to_str().unwrap()),
+                                                query: String::from("14"),
+                                                dtype: Dtype::F4
+                                            }, &resolution.into()) {
+                                                let tex = Rc::new(Texture::from_image(
+                                                    &mut window.factory,
+                                                    &im,
+                                                    &TextureSettings::new()
+                                                ).unwrap());
+                                                let mut sprite_tex = Sprite::from_texture(tex.clone());
+                                                sprite_tex.set_position(120.0, 320.0);
+                                                let _id_tex = scene.add_child(sprite_tex);
+                                            }
                                         }
-                                        else {
-                                            println!("shape {:?}", &d.shape);
-                                        }
-                                        
-                                        // TODO request different images
-                                        if let Some(im) = image_cache.request_one(&H5URI{
-                                            path: String::from("/home/alex/datasets/ucm-sample.h5"),
-                                            h5path: String::from("/source/images"),
-                                            query: String::from("13"),
-                                            dtype: Dtype::F4
-                                        }, &(224,224)) {
-                                            let tex = Rc::new(Texture::from_image(
-                                                &mut window.factory,
-                                                &im,
-                                                &TextureSettings::new()
-                                            ).unwrap());
-                                            let mut sprite_tex = Sprite::from_texture(tex.clone());
-                                            sprite_tex.set_position(120.0, 320.0);
-                                            let _id_tex = scene.add_child(sprite_tex);
-                                        }
-                                        
                                         h5pointer.pop();
                                     }
                                 }

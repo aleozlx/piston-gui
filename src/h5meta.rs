@@ -246,6 +246,12 @@ pub struct Resolution {
     pub height: usize
 }
 
+impl Into<(u32, u32)> for Resolution {
+    fn into(self) -> (u32, u32) {
+        (self.width as u32, self.height as u32)
+    }
+}
+
 impl std::fmt::Display for Resolution {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}x{}", self.width, self.height)
