@@ -29,16 +29,33 @@ impl ToString for Dtype {
 }
 
 #[derive(PartialEq, Eq, Hash, Clone)]
+pub enum Query {
+    One(usize),
+    Range(usize, usize),
+    Batch(usize, usize)
+}
+
+impl ToString for Query {
+    fn to_string(&self) -> String {
+        match self {
+            Query::One(idx) => idx.to_string(),
+            Query::Range(a, b) => format!("{}:{}", a, b),
+            Query::Batch(idx, len) => format!("{}:{}", idx, idx+len)
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Clone)]
 pub struct H5URI {
     pub path: String,
     pub h5path: String,
-    pub query: String,
+    pub query: Query,
     pub dtype: Dtype
 }
 
 impl ToString for H5URI {
     fn to_string(&self) -> String {
-        [self.path.clone(), self.h5path.clone(), self.query.clone(), self.dtype.to_string()].join("\t")
+        [self.path.clone(), self.h5path.clone(), self.query.to_string(), self.dtype.to_string()].join("\t")
     }
 }
 

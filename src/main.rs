@@ -18,7 +18,7 @@ use vgui::SpritePrototype;
 use vgui::MenuAdapter;
 use vgui::VGUIFont;
 use h5meta::{H5Obj, H5Group};
-use h5slice::{H5URI, Dtype, H5Cache};
+use h5slice::{H5URI, Dtype, H5Cache, Query};
 use piston_window::*;
 use sprite::*;
 
@@ -133,7 +133,7 @@ fn main() {
                                             if let Some(im) = image_cache.request_one(&H5URI{
                                                 path: String::from("/home/alex/datasets/ucm-sample.h5"),
                                                 h5path: String::from(h5pointer.to_str().unwrap()),
-                                                query: String::from("14"),
+                                                query: Query::One(14),
                                                 dtype: Dtype::F4
                                             }, &resolution.into()) {
                                                 let tex = Rc::new(Texture::from_image(
