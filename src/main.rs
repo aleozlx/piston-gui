@@ -21,6 +21,9 @@ use h5slice::{H5URI, Dtype, H5Cache, Query, TexImage};
 use piston_window::*;
 use sprite::*;
 
+const SCREEN_WIDTH: f64 = 1920.0;
+const SCREEN_HEIGHT: f64 = 1080.0;
+
 impl MenuAdapter<H5Group> for vgui::Menu {
     fn adapt(group: &H5Group, font: VGUIFont) -> vgui::Menu {
         let ref mut group_entries: Vec<String> = group.children.keys().cloned().collect();
@@ -73,7 +76,10 @@ fn main() {
         query: Query::One(0),
         dtype: Dtype::F4
     };
-    let mut layout = FlowLayout::new();
+    let mut layout = FlowLayout::view_size((SCREEN_WIDTH-(15.0+315.0+15.0+15.0), SCREEN_HEIGHT-(15.0+32.0+6.0+15.0)));
+    let mut sprite_layout = layout.make_sprite(&mut window.factory);
+    sprite_layout.set_position(15.0+315.0+15.0, 15.0+32.0+6.0);
+    scene.add_child(sprite_layout);
     let mut pages = Pagnator::new(&layout, 0);
 
     // Status

@@ -149,9 +149,19 @@ pub struct FlowLayout {
 }
 
 impl FlowLayout {
+    #[allow(dead_code)]
     pub fn new() -> FlowLayout {
         FlowLayout {
             view_size: (1920, 1080),
+            item_size: (100, 100),
+            spacing: 6
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn view_size(sz: (f64, f64)) -> FlowLayout {
+        FlowLayout {
+            view_size: (sz.0 as u32, sz.1 as u32),
             item_size: (100, 100),
             spacing: 6
         }
@@ -187,6 +197,25 @@ impl Layout for FlowLayout {
 impl Paginatable for FlowLayout {
     fn page_capacity(&self) -> usize {
         self.get_items_per_row() * self.get_items_per_col()
+    }
+}
+
+impl SpritePrototype for FlowLayout {
+    fn make_sprite<F, R>(&mut self, factory: &mut F) -> Sprite<Texture<R>>
+        where F: gfx::Factory<R>, R: gfx::Resources
+    {        
+        let (width, height) = self.view_size();
+        let mut image = RgbaImage::new(width, height);
+        let mut sprite;
+        if cfg!(debug_assertions) {
+            imageproc::drawing::draw_hollow_rect_mut(&mut image, Rect::at(0, 0).of_size(width, height), Rgba([0u8, 0u8, 255u8, 255u8]));
+            sprite = sprite_from_image(&image, factory);
+        }
+        else {
+            sprite = Sprite::from_texture(Rc::new(Texture::empty(factory).unwrap()));
+        }
+        sprite.set_anchor(0.0, 0.0);
+        return sprite;
     }
 }
 
