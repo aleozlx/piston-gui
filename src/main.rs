@@ -83,6 +83,7 @@ fn main() {
         width: 0,
         height: 0
     };
+    let mut page = 0usize;
     
     while let Some(e) = window.next() {
         scene.event(&e);
@@ -125,11 +126,7 @@ fn main() {
                                             target_resolution = resolution;
                                             uri.h5path = String::from(h5pointer.to_str().unwrap());
 
-                                            if let Some(im) = image_cache.request_one(&uri, target_resolution.clone().into()) {
-                                                let mut sprite_tex = sprite_from_image(&im, &mut window.factory);
-                                                sprite_tex.set_position(120.0, 320.0);
-                                                let _id_tex = scene.add_child(sprite_tex);
-                                            }
+                                            
                                         }
                                         h5pointer.pop();
                                     }
@@ -144,6 +141,19 @@ fn main() {
                         scene.remove_child(menu.uuid_self.unwrap());
                         menu = vgui::Menu::adapt(h5root.locate_group(&h5pointer).unwrap(), Rc::clone(&font));
                         register_menu(&mut scene, &mut menu, &mut window.factory);
+                    }
+                },
+                Key::Comma => {
+
+                },
+                Key::Period => {
+                    page += 1;
+                    uri.query = Query::One(page);
+
+                    if let Some(im) = image_cache.request_one(&uri, target_resolution.clone().into()) {
+                        let mut sprite_tex = sprite_from_image(&im, &mut window.factory);
+                        sprite_tex.set_position(120.0 + 200.0*(page as f64), 320.0);
+                        let _id_tex = scene.add_child(sprite_tex);
                     }
                 }
                 _ => {}
