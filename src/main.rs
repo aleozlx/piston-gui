@@ -15,10 +15,9 @@ mod h5meta;
 mod h5slice;
 use std::rc::Rc;
 use std::path::PathBuf;
-use std::borrow::Borrow;
 use vgui::{SpritePrototype, MenuAdapter, VGUIFont};
-use h5meta::{H5Obj, H5Group, H5DatasetFormat, Resolution};
-use h5slice::{H5URI, Dtype, H5Cache, Query, TexImage};
+use h5meta::{H5Obj, H5Group, H5DatasetFormat};
+use h5slice::{H5URI, Dtype, H5Cache, Query};
 use piston_window::*;
 use sprite::*;
 

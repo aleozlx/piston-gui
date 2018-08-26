@@ -1,32 +1,34 @@
 extern crate image;
 extern crate flate2;
 
-use std::{mem, slice};
+use std::slice;
 use std::io::prelude::*;
 use std::net::TcpStream;
 use flate2::read::GzDecoder;
 use std::string::ToString;
 use std::collections::HashMap;
-use std::ops::Deref;
 
+// TODO cache f32 to decouple image pipeline
 pub type TexImage = image::RgbaImage;
 
+#[allow(dead_code)]
 #[derive(PartialEq, Eq, Hash, Clone)]
 pub enum Dtype {
-    I4, I8, F4, F8
+    I4, F4
 }
 
 impl ToString for Dtype {
     fn to_string(&self) -> String {
         match self {
             Dtype::I4 => String::from("i4"),
-            Dtype::I8 => String::from("i8"),
+            // Dtype::I8 => String::from("i8"),
             Dtype::F4 => String::from("f4"),
-            Dtype::F8 => String::from("f8"),
+            // Dtype::F8 => String::from("f8"),
         }
     }
 }
 
+#[allow(dead_code)]
 #[derive(PartialEq, Eq, Hash, Clone)]
 pub enum Query {
     One(usize),
