@@ -145,7 +145,8 @@ pub fn load_font(fname: &str) -> Result<VGUIFont, rusttype::Error> {
 pub struct FlowLayout {
     pub view_size: (u32, u32),
     pub item_size: (u32, u32),
-    pub spacing: u32
+    pub spacing: u32,
+    pub uuid_self: Option<uuid::Uuid>
 }
 
 impl FlowLayout {
@@ -154,7 +155,8 @@ impl FlowLayout {
         FlowLayout {
             view_size: (1920, 1080),
             item_size: (100, 100),
-            spacing: 6
+            spacing: 6,
+            uuid_self: None
         }
     }
 
@@ -163,7 +165,8 @@ impl FlowLayout {
         FlowLayout {
             view_size: (sz.0 as u32, sz.1 as u32),
             item_size: (100, 100),
-            spacing: 6
+            spacing: 6,
+            uuid_self: None
         }
     }
 
@@ -272,11 +275,24 @@ pub struct Pagnator {
 }
 
 impl Pagnator {
-    pub fn new(o: &Paginatable, n_items: usize) -> Pagnator {
-        Pagnator { item_range: 0..n_items, page_size: o.page_capacity(), page_current: 0 }
+    pub fn new(o: &Paginatable, total_items: usize) -> Pagnator {
+        Pagnator { item_range: 0..total_items, page_size: o.page_capacity(), page_current: 0 }
     }
 
-    pub fn get_range(&self, page_size: usize) -> Option<std::ops::Range<usize>> {
+    pub fn inc(&mut self) {
+        let p = (self.page_current+1) * self.page_size;
+        if self.item_range.start <= p && p < self.item_range.end {
+            self.page_current += 1;
+        }
+    }
+
+    pub fn dec(&mut self) {
+        if self.page_current > 0 {
+            self.page_current -= 1;
+        }
+    }
+
+    pub fn get_range(&self) -> Option<std::ops::Range<usize>> {
         let p = self.page_current * self.page_size;
         if self.item_range.start <= p && p < self.item_range.end {
             let end = std::cmp::min(p+self.page_size, self.item_range.end);

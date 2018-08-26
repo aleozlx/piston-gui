@@ -8,6 +8,7 @@ extern crate rusttype;
 extern crate gfx;
 extern crate regex;
 extern crate flate2;
+extern crate uuid;
 
 mod vgui;
 mod h5meta;
@@ -15,7 +16,7 @@ mod h5slice;
 use std::rc::Rc;
 use std::path::PathBuf;
 use std::borrow::Borrow;
-use vgui::{SpritePrototype, MenuAdapter, VGUIFont, FlowLayout, StatusBar, Pagnator};
+use vgui::{SpritePrototype, MenuAdapter, VGUIFont};
 use h5meta::{H5Obj, H5Group, H5DatasetFormat, Resolution};
 use h5slice::{H5URI, Dtype, H5Cache, Query, TexImage};
 use piston_window::*;
@@ -52,6 +53,41 @@ fn register_menu<F, R>(scene: &mut sprite::Scene<piston_window::Texture<R>>, men
             Box::new(MoveTo(0.2, 15.0, 15.0)))));
 }
 
+fn register_layout<F, R>(scene: &mut sprite::Scene<piston_window::Texture<R>>, layout: &mut vgui::FlowLayout, factory: &mut F)
+    where F: gfx::Factory<R>, R: gfx::Resources
+{
+    let mut sprite_layout = layout.make_sprite(factory);
+    sprite_layout.set_position(15.0+315.0+15.0, 15.0+32.0+6.0);
+    layout.uuid_self = Some(scene.add_child(sprite_layout));
+}
+
+fn update_page<F, R>(
+    pagnator: &vgui::Pagnator,
+    mut uri: H5URI,
+    image_cache: &mut H5Cache,
+    layout: &vgui::FlowLayout,
+    scene: &mut sprite::Scene<piston_window::Texture<R>>,
+    factory: &mut F)
+    where F: gfx::Factory<R>, R: gfx::Resources
+{
+    if let Some(page_range) = pagnator.get_range() {
+        let sprite_layout = scene.child_mut(layout.uuid_self.unwrap()).unwrap();
+        for (i,p) in page_range.enumerate() {
+            uri.query = Query::One(p);
+            if let Some(im) = image_cache.request(&uri, layout.item_size) {
+                let mut sprite_tex = vgui::sprite_from_image(&im, factory);
+                let position = layout.get_coordinate(i);
+                sprite_tex.set_anchor(0.0, 0.0);
+                sprite_tex.set_position(position.0, position.1);
+                sprite_layout.add_child(sprite_tex);
+            }
+            else {
+                // status!("Not available!");
+            }
+        }
+    }
+}
+
 fn main() {
     let (width, height) = (800, 600);
     let opengl = OpenGL::V3_2;
@@ -76,14 +112,12 @@ fn main() {
         query: Query::One(0),
         dtype: Dtype::F4
     };
-    let mut layout = FlowLayout::view_size((SCREEN_WIDTH-(15.0+315.0+15.0+15.0), SCREEN_HEIGHT-(15.0+32.0+6.0+15.0)));
-    let mut sprite_layout = layout.make_sprite(&mut window.factory);
-    sprite_layout.set_position(15.0+315.0+15.0, 15.0+32.0+6.0);
-    scene.add_child(sprite_layout);
-    let mut pages = Pagnator::new(&layout, 0);
+    let mut layout = vgui::FlowLayout::view_size((SCREEN_WIDTH-(15.0+315.0+15.0+15.0), SCREEN_HEIGHT-(15.0+32.0+6.0+15.0)));
+    register_layout(&mut scene, &mut layout, &mut window.factory);
+    let mut pagnator = None;
 
     // Status
-    let mut status_bar = StatusBar {
+    let mut status_bar = vgui::StatusBar {
         label: String::from("Initializing..."),
         font: font.clone(),
         color: image::Rgba([0u8, 0u8, 255u8, 255u8])
@@ -141,7 +175,12 @@ fn main() {
                                                 dpath, fmt.my_shape_to_string(),
                                                 fmt.pagination_range.end, resolution, fmt.format));
                                             layout.item_size = resolution.into();
+                                            pagnator = Some(vgui::Pagnator::new(&layout, fmt.pagination_range.end));
                                             uri.h5path = String::from(dpath);
+
+                                            if let Some(pagnator) = &pagnator {
+                                                update_page(&pagnator, uri.clone(), &mut image_cache, &layout, &mut scene, &mut window.factory);
+                                            }
                                         }
                                         else {
                                             status!(format!("Unable to visualize dataset with shape: ({})",
@@ -163,26 +202,26 @@ fn main() {
                     }
                 },
                 Key::Comma => {
-
+                    if let Some(pagnator) = &mut pagnator {
+                        scene.remove_child(layout.uuid_self.unwrap());
+                        register_layout(&mut scene, &mut layout, &mut window.factory);
+                        pagnator.dec();
+                        update_page(&pagnator, uri.clone(), &mut image_cache, &layout, &mut scene, &mut window.factory);
+                    }
+                    if let Some(pagnator) = &pagnator {
+                        status!(format!("page: {}", pagnator.page_current));
+                    }
                 },
                 Key::Period => {
-                    // let cap = layout.page_capacity();
-                    // status!(format!("capacity: {}", cap));
-
-                    // page += 1;
-                    // uri.query = Query::One(page);
-
-                    // if let Some(im) = image_cache.request_one(&uri, target_resolution.clone().into()) {
-                    //     let mut sprite_tex = vgui::sprite_from_image(&im, &mut window.factory);
-                    //     let position = layout.get_coordinate(page);
-                    //     sprite_tex.set_anchor(0.0, 0.0);
-                    //     sprite_tex.set_position(position.0, position.1);
-                        
-                    //     let _id_tex = scene.add_child(sprite_tex);
-                    // }
-                    // else {
-                    //     status!("Not available!");
-                    // }
+                    if let Some(pagnator) = &mut pagnator {
+                        scene.remove_child(layout.uuid_self.unwrap());
+                        register_layout(&mut scene, &mut layout, &mut window.factory);
+                        pagnator.inc();
+                        update_page(&pagnator, uri.clone(), &mut image_cache, &layout, &mut scene, &mut window.factory);
+                    }
+                    if let Some(pagnator) = &pagnator {
+                        status!(format!("page: {}", pagnator.page_current));
+                    }
                 }
                 _ => {}
             }

@@ -58,20 +58,25 @@ impl ToString for H5URI {
 }
 
 pub struct H5Cache {
-    buffer: HashMap<H5URI, TexImage>
+    buffer: HashMap<H5URI, TexImage>,
+    hint: usize
 }
 
 impl H5Cache {
     pub fn new() -> H5Cache {
-        H5Cache { buffer: HashMap::with_capacity(60) }
+        H5Cache { buffer: HashMap::with_capacity(60), hint: 32 }
     }
 
-    pub fn request_one(&mut self, uri: &H5URI, resolution: (u32, u32)) -> Option<&'_ mut TexImage> {
-        if self.buffer.contains_key(uri) {
-            Some(self.buffer.get_mut(uri).unwrap())
-        }
-        else {
-            self.fetch_one(uri, resolution)
+    pub fn request(&mut self, uri: &H5URI, resolution: (u32, u32)) -> Option<&'_ mut TexImage> {
+        match uri.query {
+            Query::One(_) =>
+                if self.buffer.contains_key(uri) {
+                    Some(self.buffer.get_mut(uri).unwrap())
+                }
+                else {
+                    self.fetch_one(uri, resolution)
+                },
+            _ => None
         }
     }
 
