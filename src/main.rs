@@ -23,6 +23,18 @@ use sprite::*;
 
 const SCREEN_WIDTH: f64 = 1920.0;
 const SCREEN_HEIGHT: f64 = 1080.0;
+const WIDGET_MARGIN: f64 = 15.0;
+const WIDGET_SPACING: f64 = 6.0;
+const ENTRY_HEIGHT: f64 = vgui::ENTRY_HEIGHT as f64;
+const COLUMN_WIDTH: f64 = vgui::COLUMN_WIDTH as f64;
+const LEFT_PANEL_HEND: f64 = WIDGET_MARGIN + COLUMN_WIDTH + WIDGET_SPACING;
+const STATUS_VEND: f64 = WIDGET_MARGIN + ENTRY_HEIGHT + WIDGET_SPACING;
+macro_rules! auto_size {
+    [ left: $a:expr, right: $b:expr ] => { (SCREEN_WIDTH-($a + $b)) };
+    [ left: $a:expr ] => { auto_size![left: $a, right: WIDGET_MARGIN] };
+    [ top: $a:expr, bottom: $b:expr ] => { (SCREEN_HEIGHT-($a + $b)) };
+    [ top: $a:expr ] => { auto_size![top: $a, bottom: WIDGET_MARGIN] };
+}
 
 impl MenuAdapter<H5Group> for vgui::Menu {
     fn adapt(group: &H5Group, font: VGUIFont) -> vgui::Menu {
@@ -45,18 +57,18 @@ fn register_menu<F, R>(scene: &mut sprite::Scene<piston_window::Texture<R>>, men
     where F: gfx::Factory<R>, R: gfx::Resources
 {
     let mut s_menu = menu.make_sprite(factory);
-    s_menu.set_position(-300.0, 15.0);
+    s_menu.set_position(-300.0, WIDGET_MARGIN);
     menu.uuid_self = Some(scene.add_child(s_menu));
     scene.run(menu.uuid_self.unwrap(),
         &ai_behavior::Action(Ease(EaseFunction::ExponentialIn,
-            Box::new(MoveTo(0.2, 15.0, 15.0)))));
+            Box::new(MoveTo(0.2, WIDGET_MARGIN, WIDGET_MARGIN)))));
 }
 
 fn register_layout<F, R>(scene: &mut sprite::Scene<piston_window::Texture<R>>, layout: &mut vgui::FlowLayout, factory: &mut F)
     where F: gfx::Factory<R>, R: gfx::Resources
 {
     let mut sprite_layout = layout.make_sprite(factory);
-    sprite_layout.set_position(15.0+315.0+15.0, 15.0+32.0+6.0);
+    sprite_layout.set_position(LEFT_PANEL_HEND, STATUS_VEND);
     layout.uuid_self = Some(scene.add_child(sprite_layout));
 }
 
@@ -111,7 +123,10 @@ fn main() {
         query: Query::One(0),
         dtype: Dtype::F4
     };
-    let mut layout = vgui::FlowLayout::view_size((SCREEN_WIDTH-(15.0+315.0+15.0+15.0), SCREEN_HEIGHT-(15.0+32.0+6.0+15.0)));
+    let mut layout = vgui::FlowLayout::view_size((
+            auto_size![ left: LEFT_PANEL_HEND ],
+            auto_size![ top: STATUS_VEND ]
+        ));
     register_layout(&mut scene, &mut layout, &mut window.factory);
     let mut pagnator = None;
 
@@ -119,10 +134,11 @@ fn main() {
     let mut status_bar = vgui::StatusBar {
         label: String::from("Initializing..."),
         font: font.clone(),
-        color: image::Rgba([0u8, 0u8, 255u8, 255u8])
+        color: image::Rgba([0u8, 0u8, 255u8, 255u8]),
+        width: auto_size![ left: LEFT_PANEL_HEND ] as u32
     };
     let mut sprite_status = status_bar.make_sprite(&mut window.factory);
-    sprite_status.set_position(15.0+315.0+15.0, 15.0);
+    sprite_status.set_position(LEFT_PANEL_HEND, WIDGET_MARGIN);
     let id_status = scene.add_child(sprite_status);
     macro_rules! status {
         ( $label:expr ) => {

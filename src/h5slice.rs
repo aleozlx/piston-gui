@@ -160,7 +160,7 @@ impl H5Cache {
                 self.prefetch(&uri_prefetch, resolution);
                 Some(self.buffer.get_mut(uri).unwrap())
             },
-            _ => None // uri is ensured to be One because this function is private!
+            _ => unreachable!() // uri is ensured to be One because this function is private!
         }
     }
 }

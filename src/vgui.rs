@@ -19,8 +19,8 @@ use image::{Rgba, RgbaImage};
 pub type VGUIFont = std::rc::Rc<rusttype::Font<'static>>;
 pub type TexImage = RgbaImage;
 
-const ENTRY_HEIGHT: u32 = 32;
-const COLUMN_WIDTH: u32 = 315;
+pub const ENTRY_HEIGHT: u32 = 32;
+pub const COLUMN_WIDTH: u32 = 315;
 
 pub trait SpritePrototype {
     fn make_sprite<F, R>(&mut self, factory: &mut F) -> Sprite<Texture<R>>
@@ -225,7 +225,8 @@ impl SpritePrototype for FlowLayout {
 pub struct StatusBar {
     pub label: String,
     pub font: VGUIFont,
-    pub color: Rgba<u8>
+    pub color: Rgba<u8>,
+    pub width: u32
 }
 
 impl StatusBar {
@@ -243,11 +244,10 @@ impl StatusBar {
 
     fn draw(&mut self) -> TexImage {
         const HEIGHT: u32 = ENTRY_HEIGHT;
-        const WIDTH: u32 = COLUMN_WIDTH * 3;
-        let mut image = RgbaImage::new(WIDTH, HEIGHT);
+        let mut image = RgbaImage::new(self.width, HEIGHT);
         let scale = rusttype::Scale { x: HEIGHT as f32, y: HEIGHT as f32 };
         if cfg!(debug_assertions) {
-            imageproc::drawing::draw_hollow_rect_mut(&mut image, Rect::at(0, 0).of_size(WIDTH, HEIGHT), Rgba([0u8, 0u8, 255u8, 255u8]));
+            imageproc::drawing::draw_hollow_rect_mut(&mut image, Rect::at(0, 0).of_size(self.width, HEIGHT), Rgba([0u8, 0u8, 255u8, 255u8]));
         }
         imageproc::drawing::draw_text_mut(&mut image, self.color, 0, 0, scale, self.font.borrow(), &self.label);
         return image;
