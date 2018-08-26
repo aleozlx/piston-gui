@@ -208,7 +208,7 @@ fn main() {
                         update_page(&pagnator, uri.clone(), &mut image_cache, &layout, &mut scene, &mut window.factory);
                     }
                     if let Some(pagnator) = &pagnator {
-                        status!(format!("page: {}", pagnator.page_current));
+                        status!(format!("Dataset {} page: {}/{}", &uri.h5path, pagnator.page_current+1, pagnator.total()));
                     }
                 },
                 Key::Period => {
@@ -219,7 +219,7 @@ fn main() {
                         update_page(&pagnator, uri.clone(), &mut image_cache, &layout, &mut scene, &mut window.factory);
                     }
                     if let Some(pagnator) = &pagnator {
-                        status!(format!("page: {}", pagnator.page_current));
+                        status!(format!("Dataset {} page: {}/{}", &uri.h5path, pagnator.page_current+1, pagnator.total()));
                     }
                 }
                 _ => {}

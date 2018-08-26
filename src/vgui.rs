@@ -269,19 +269,19 @@ impl SpritePrototype for StatusBar {
 }
 
 pub struct Pagnator {
-    pub item_range: std::ops::Range<usize>,
+    pub total_items: usize,
     pub page_size: usize,
     pub page_current: usize
 }
 
 impl Pagnator {
     pub fn new(o: &Paginatable, total_items: usize) -> Pagnator {
-        Pagnator { item_range: 0..total_items, page_size: o.page_capacity(), page_current: 0 }
+        Pagnator { total_items: total_items, page_size: o.page_capacity(), page_current: 0 }
     }
 
     pub fn inc(&mut self) {
         let p = (self.page_current+1) * self.page_size;
-        if self.item_range.start <= p && p < self.item_range.end {
+        if p < self.total_items {
             self.page_current += 1;
         }
     }
@@ -292,10 +292,14 @@ impl Pagnator {
         }
     }
 
+    pub fn total(&self) -> usize {
+        (self.total_items + self.page_size - 1) / self.page_size
+    }
+
     pub fn get_range(&self) -> Option<std::ops::Range<usize>> {
         let p = self.page_current * self.page_size;
-        if self.item_range.start <= p && p < self.item_range.end {
-            let end = std::cmp::min(p+self.page_size, self.item_range.end);
+        if p < self.total_items {
+            let end = std::cmp::min(p+self.page_size, self.total_items);
             Some(p..end)
         }
         else { None }
