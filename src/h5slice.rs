@@ -83,8 +83,8 @@ impl H5Cache {
 
     fn download(uri: &H5URI) -> Option<Vec<u8>> {
         let mut stream = TcpStream::connect("localhost:8000").ok()?;
-        let mut buffer_in = Vec::with_capacity(8<<10);
-        let mut buffer_out = Vec::with_capacity(4<<20);
+        let mut buffer_in = Vec::with_capacity(8<<20);
+        let mut buffer_out = Vec::with_capacity(20<<20);
         let _ = stream.write(uri.to_string().as_bytes());
         let n = stream.read_to_end(&mut buffer_in).ok()?;
         // TODO use logging instead
@@ -95,13 +95,12 @@ impl H5Cache {
         return Some(buffer_out);
     }
 
-    fn deserialize(buffer: &Vec<u8>, resolution: &(u32, u32), offset: isize) -> Option<TexImage> {
+    fn deserialize(buffer: &Vec<u8>, resolution: &(u32, u32), im_offset: isize) -> Option<TexImage> {
+        let im_size = (resolution.0*resolution.1*3) as usize;
         let data = unsafe {
-            slice::from_raw_parts(
-                (buffer.as_ptr() as *const f32).offset(offset),
-                mem::size_of::<f32>()*((resolution.0*resolution.1*3) as usize))
+            let base = buffer.as_ptr() as *const f32;
+            slice::from_raw_parts(base.offset(im_offset * (im_size as isize)), im_size)
         };
-
         Some(image::DynamicImage::ImageRgb8(image::ImageBuffer::from_raw(
             resolution.0, resolution.1,
             data.into_iter().map(|x| {
@@ -119,10 +118,22 @@ impl H5Cache {
                     }
                 },
                 Query::Batch(idx, len) => {
-
+                    let mut uri_one = uri.clone();
+                    for (offset, i) in (idx..idx+len).enumerate() {
+                        if let Some(im_rgba) = H5Cache::deserialize(&buffer_out, &resolution, offset as isize) {
+                            uri_one.query = Query::One(i);
+                            self.buffer.insert(uri_one.clone(), im_rgba);
+                        }
+                    }
                 },
                 Query::Range(a, b) => {
-
+                    let mut uri_one = uri.clone();
+                    for (offset, i) in (a..b).enumerate() {
+                        if let Some(im_rgba) = H5Cache::deserialize(&buffer_out, &resolution, offset as isize) {
+                            uri_one.query = Query::One(i);
+                            self.buffer.insert(uri_one.clone(), im_rgba);
+                        }
+                    }
                 }
             }
         }
@@ -130,13 +141,13 @@ impl H5Cache {
 
     fn auto_prefetch_uri(&self, uri_original: &H5URI) -> H5URI {
         let mut uri = uri_original.clone();
-        // match uri.query {
-        //     Query::One(idx) => {
-        //         // ? check overlap?
-        //         uri.query = Query::Batch(idx, self.hint);
-        //     },
-        //     _ => {}
-        // }
+        match uri.query {
+            Query::One(idx) => {
+                // ? check overlap?
+                uri.query = Query::Batch(idx, self.hint);
+            },
+            _ => {}
+        }
         return uri;
     }
 
